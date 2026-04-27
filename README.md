@@ -6,6 +6,21 @@ A full-stack enterprise church management system built with **Flask** (backend R
 
 ---
 
+## 🏛️ CMDMS — Executive Summary
+
+CMDMS is a multi-tenant SaaS platform designed to digitize church operations in Africa by providing a centralized system for governance, financial management, and member administration.
+
+The platform enables churches to:
+
+- Receive and track donations via **M-Pesa**
+- Manage members, leaders, and branches
+- Maintain financial transparency through role-based access control
+- Access real-time analytics and audit logs
+
+Unlike generic business software, CMDMS is purpose-built for African church structures, incorporating hierarchical governance (**Bishop → Overseer → Pastor → Leader → Member**) and integrating directly with mobile money infrastructure.
+
+---
+
 ## 🏗️ Tech Stack
 
 | Layer | Technology |
