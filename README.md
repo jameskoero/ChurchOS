@@ -2,7 +2,16 @@
 
 **Ministry of Repentance and Holiness · Migosi Region, Kisumu, Kenya**
 
-A full-stack enterprise church management system built with **Flask** (backend REST API) and **React PWA** (frontend), deployed on **Render** with **PostgreSQL**.
+> Digital management system v2 for Ministry of Repentance & Holiness. React dashboard + Node.js API for membership, tithes, and events.
+
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=flat&logo=flask&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
+
+A full-stack enterprise church management system with a **React** dashboard and **Node.js** API, deployed on **Render** with **PostgreSQL**. Manages membership records, tithes & offerings, attendance, and church events for the Ministry of Repentance & Holiness (Carwash Main Altar) in Kisumu, Kenya.
 
 ---
 
@@ -169,6 +178,12 @@ Every `git push` to `main` → GitHub Actions → Render Deploy Hook → Live in
 - **PostgreSQL** expires after **90 days** — upgrade plan or recreate before expiry
 - **Web service** spins down after **15 minutes** idle — first request may be slow (~30s)
 - Use [UptimeRobot](https://uptimerobot.com) (free) to ping every 14 minutes to prevent spin-down
+
+---
+
+## 🏷️ Keywords
+
+`church-management` `react` `nodejs` `javascript` `flask` `postgresql` `membership` `tithes` `events` `kisumu` `kenya` `pwa` `jwt` `rbac` `mpesa` `africa`
 
 ---
 
