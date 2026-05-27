@@ -15,7 +15,7 @@ export function register(config) {
       if (isLocalhost) {
         checkValidServiceWorker(swUrl, config);
         navigator.serviceWorker.ready.then(() => {
-          console.log('CMDMS running in offline-ready mode (localhost).');
+          console.log('CDMS running in offline-ready mode (localhost).');
         });
       } else {
         registerValidSW(swUrl, config);
@@ -34,10 +34,10 @@ function registerValidSW(swUrl, config) {
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
-              console.log('New CMDMS version available. Reload to update.');
+              console.log('New CDMS version available. Reload to update.');
               if (config && config.onUpdate) config.onUpdate(registration);
             } else {
-              console.log('CMDMS is ready for offline use.');
+              console.log('CDMS is ready for offline use.');
               if (config && config.onSuccess) config.onSuccess(registration);
             }
           }
@@ -59,7 +59,7 @@ function checkValidServiceWorker(swUrl, config) {
         registerValidSW(swUrl, config);
       }
     })
-    .catch(() => { console.log('No internet. CMDMS running in offline mode.'); });
+    .catch(() => { console.log('No internet. CDMS running in offline mode.'); });
 }
 
 export function unregister() {

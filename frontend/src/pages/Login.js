@@ -76,7 +76,7 @@ export default function Login() {
             fontWeight: 700,
             marginBottom: '0.25rem'
           }}>
-            CMDMS V2
+            CDMS V2
           </h1>
           <p style={{ color: 'var(--gray-600)', fontSize: '0.82rem' }}>
             Ministry of Repentance & Holiness

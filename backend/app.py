@@ -64,7 +64,7 @@ def create_app(config_name=None):
     # Health check
     @app.route('/api/health')
     def health():
-        return jsonify({'status': 'ok', 'app': 'CMDMS V2', 'version': '2.0.0'}), 200
+        return jsonify({'status': 'ok', 'app': 'CDMS V2', 'version': '2.0.0'}), 200
 
     # Serve React frontend in production
     @app.route('/', defaults={'path': ''})

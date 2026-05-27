@@ -58,7 +58,7 @@ class Member(db.Model):
     __tablename__ = 'members'
 
     id = db.Column(db.Integer, primary_key=True)
-    member_id = db.Column(db.String(15), unique=True, nullable=False)  # MRH-XXXXXX
+    member_id = db.Column(db.String(15), unique=True, nullable=False)  # CHR-XXXXXX
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120))
@@ -86,7 +86,7 @@ class Member(db.Model):
     def generate_member_id():
         while True:
             suffix = ''.join(random.choices(string.digits, k=6))
-            mid = f'MRH-{suffix}'
+            mid = f'CHR-{suffix}'
             if not Member.query.filter_by(member_id=mid).first():
                 return mid
 

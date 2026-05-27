@@ -1,4 +1,4 @@
-name: Deploy CMDMS V2 to Render
+name: Deploy CDMS V2 to Render
 
 on:
   push:

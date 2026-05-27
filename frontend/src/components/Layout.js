@@ -55,7 +55,7 @@ export default function Layout() {
             fontWeight: 700,
             lineHeight: 1.2,
           }}>
-            MRH · CMDMS
+            MRH · CDMS
           </div>
           <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.72rem', marginTop: 4 }}>
             Ministry Management V2
@@ -184,7 +184,7 @@ export default function Layout() {
             fontSize: '1rem',
             display: window.innerWidth < 900 ? 'block' : 'none'
           }}>
-            MRH · CMDMS V2
+            MRH · CDMS V2
           </div>
           <div style={{
             fontSize: '0.8rem', color: 'var(--gray-600)',

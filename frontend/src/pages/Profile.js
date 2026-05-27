@@ -118,10 +118,10 @@ export default function Profile() {
       {/* System info */}
       <div className="card" style={{ marginTop: '1.25rem', background: 'var(--navy)', color: 'var(--white)' }}>
         <p style={{ color: 'var(--gold)', fontFamily: 'var(--font-display)', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
-          CMDMS V2 · Ministry of Repentance & Holiness
+          CDMS V2 · Ministry of Repentance & Holiness
         </p>
         <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
-          Carwash Main Altar Digital Management System<br />
+          Church Digital Management System<br />
           Migosi Region, Kisumu, Kenya<br />
           Version 2.0.0 · Built with Flask + React
         </p>
