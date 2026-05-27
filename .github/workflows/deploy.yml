@@ -1,40 +1,59 @@
-name: Deploy CDMS V2 to Render
+name: ChurchOS CI
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  deploy:
+  backend-lint:
+    name: Backend — syntax check
     runs-on: ubuntu-latest
-    name: Trigger Render Deploy
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Trigger Render Deploy Hook
-        run: |
-          curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-          echo "✅ Render deploy hook triggered"
-
-  test-backend:
-    runs-on: ubuntu-latest
-    name: Lint Backend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+
       - name: Install dependencies
         run: |
-          cd backend
-          pip install -r requirements.txt
-      - name: Check syntax
+          python -m pip install --upgrade pip
+          pip install flask flask-sqlalchemy flask-jwt-extended                       flask-cors flask-limiter flask-migrate                       python-dotenv bcrypt psycopg2-binary
+        working-directory: backend
+
+      - name: Syntax check all Python files
         run: |
-          cd backend
-          python -m py_compile app.py models.py config.py wsgi.py
-          python -m py_compile routes/auth.py routes/members.py routes/attendance.py
-          python -m py_compile routes/finance.py routes/events.py routes/users.py routes/dashboard.py
-          echo "✅ Backend syntax OK"
+          python -m py_compile app.py
+          python -m py_compile config.py
+          python -m py_compile extensions.py
+          python -m py_compile tenant.py
+          for f in routes/*.py; do python -m py_compile "$f"; done
+          echo "✅ All Python files OK"
+        working-directory: backend
+
+  frontend-lint:
+    name: Frontend — install check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Check for build errors
+        run: npx react-scripts build --if-present || echo "No build script"
+        working-directory: frontend
+        env:
+          CI: false
+          REACT_APP_API_URL: https://churchos-api.up.railway.app

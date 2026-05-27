@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pip install -r requirements.txt"
+
+[deploy]
+startCommand = "gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2"
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
+
+[environments.production.variables]
+FLASK_ENV = "production"
