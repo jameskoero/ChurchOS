@@ -3,36 +3,12 @@
 > Africa-first multi-tenant SaaS for church governance, financial management,
 > and member administration.
 
-[
-
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)
-
-](https://python.org)
-[
-
-![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)
-
-](https://flask.palletsprojects.com)
-[
-
-![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)
-
-](https://react.dev)
-[
-
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Railway-4169E1?style=flat&logo=postgresql&logoColor=white)
-
-](https://railway.app)
-[
-
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-](LICENSE)
-[
-
-![CI](https://github.com/jameskoero/cmdms-v2/actions/workflows/deploy.yml/badge.svg)
-
-](https://github.com/jameskoero/cmdms-v2/actions)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Railway-4169E1?style=flat&logo=postgresql&logoColor=white)](https://railway.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/jameskoero/cmdms-v2/actions/workflows/deploy.yml/badge.svg)](https://github.com/jameskoero/cmdms-v2/actions)
 
 **Backend:** `https://churchos.up.railway.app` | **Frontend:** `https://churchos.vercel.app`
 **Version:** v1.0.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
