@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Railway-4169E1?style=flat&logo=postgresql&logoColor=white)](https://railway.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/jameskoero/cmdms-v2/actions/workflows/deploy.yml/badge.svg)](https://github.com/jameskoero/cmdms-v2/actions)
+[![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/deploy.yml/badge.svg)](https://github.com/jameskoero/ChurchOS/actions)
 
 **Backend:** `https://churchos.up.railway.app` | **Frontend:** `https://churchos.vercel.app`
 **Version:** v1.0.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
