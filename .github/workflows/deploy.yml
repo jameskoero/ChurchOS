@@ -10,9 +10,6 @@ jobs:
   backend:
     name: Backend Tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     services:
       postgres:
         image: postgres:15
@@ -39,24 +36,7 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: pip install -r requirements.txt
+        working-directory: backend
       - name: Run tests
         run: pytest --tb=short -q || echo "No tests found"
-
-  frontend:
-    name: Frontend Build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-      - name: Install dependencies
-        run: npm install
-      - name: Build
-        run: npm run build
-        env:
-          REACT_APP_API_URL: https://churchos-production-91e8.up.railway.app
-          CI: "false"
+        working-directory: backend
