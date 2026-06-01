@@ -36,9 +36,6 @@ Thumbs.db
 *.log
 logs/
 
-# Render / Deployment
+# Deployment
 .render/
-node_modules/
-frontend/build/
-node_modules/
-frontend/build/
+package-lock.json
