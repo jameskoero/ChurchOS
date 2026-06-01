@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "installCommand": "echo no-root-install",
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": "frontend/build"
+}
