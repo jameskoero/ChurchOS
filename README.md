@@ -261,7 +261,7 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 
 ## 15. Author
 
-James Koero · Junior ML Engineer · Kisumu, Kenya
+James Koero · ML Engineer · Kisumu, Kenya
 
 [LinkedIn](https://linkedin.com/in/jameskoero) ·
 [Nyando Flood AI](https://github.com/jameskoero/nyando-flood-ai) ·
