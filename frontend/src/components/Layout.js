@@ -55,10 +55,10 @@ export default function Layout() {
             fontWeight: 700,
             lineHeight: 1.2,
           }}>
-            MRH · CDMS
+            ChurchOS
           </div>
           <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.72rem', marginTop: 4 }}>
-            Ministry Management V2
+            Church Management V2
           </div>
         </div>
 
@@ -184,7 +184,7 @@ export default function Layout() {
             fontSize: '1rem',
             display: window.innerWidth < 900 ? 'block' : 'none'
           }}>
-            MRH · CDMS V2
+            ChurchOS
           </div>
           <div style={{
             fontSize: '0.8rem', color: 'var(--gray-600)',
