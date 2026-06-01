@@ -1,8 +1,4 @@
-[build]
-builder = "nixpacks"
-rootDirectory = "backend"
-
 [deploy]
 startCommand = "gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2"
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
+restartPolicyMaxRetries = 10
