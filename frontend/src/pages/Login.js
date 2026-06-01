@@ -159,7 +159,7 @@ export default function Login() {
           fontSize: '0.75rem',
           marginTop: '1.5rem'
         }}>
-          Authorized personnel only · MRH Kisumu
+          Authorized personnel only · ChurchOS
         </p>
       </div>
     </div>
