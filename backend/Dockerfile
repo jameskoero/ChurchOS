@@ -16,4 +16,4 @@ ENV FLASK_APP=wsgi.py
 
 EXPOSE 8000
 
-CMD flask db upgrade || echo "migrations skipped"; exec gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2
+CMD exec gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2
