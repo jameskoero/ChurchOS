@@ -83,7 +83,7 @@ export default function Dashboard() {
           <span style={{ color: 'var(--gold)' }}>{user?.full_name?.split(' ')[0] || user?.username}</span>
         </h1>
         <p style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>
-          Ministry of Repentance & Holiness — Kisumu
+          Church Management Platform — Kisumu
         </p>
       </div>
 
