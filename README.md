@@ -10,7 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/ci.yml/badge.svg)](https://github.com/jameskoero/ChurchOS/actions)
 
-**Backend:** `https://churchos-production-91e8.up.railway.app` | **Frontend:** `https://churchos.vercel.app`
+**Backend:** `https://churchos-yitr.onrender.com` | **Frontend:** `https://churchos.vercel.app`
 **Version:** v2.0.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
 
 ---
@@ -149,7 +149,7 @@ All models carry `church_id` FK. Every query filtered on this field.
 
 ## 8. API Reference
 
-Base URL: `https://churchos-production-91e8.up.railway.app`
+Base URL: `https://churchos-yitr.onrender.com`
 All endpoints require `Authorization: Bearer <access_token>` except `/api/auth/login`.
 
 | Method | Endpoint | Description |
