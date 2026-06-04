@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Railway-4169E1?style=flat&logo=postgresql&logoColor=white)](https://railway.app)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=flat&logo=postgresql&logoColor=white)](https://railway.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/ci.yml/badge.svg)](https://github.com/jameskoero/ChurchOS/actions)
 
@@ -72,9 +72,7 @@ targeting rapid iteration. The application is small enough to reason about every
 and PWA offline behaviour all require a React SPA. Deployed independently on Vercel
 so the API and UI can be updated separately.
 
-**Why Railway for the backend?** Render's free PostgreSQL expires after 90 days — a
-serious risk for a church depending on years of financial records. Railway persists
-indefinitely and accepts M-Pesa GlobalPay Visa for billing.
+**Why Render + Neon?** Neon PostgreSQL is free and durable with no expiry — critical for a church depending on years of financial records. Render deploys Docker containers reliably and auto-deploys on every push. Billing via M-Pesa GlobalPay Visa.
 
 **Why JWT with refresh token rotation?** Access tokens expire in 8 hours. Refresh
 tokens rotate on every use — if a token is used twice, both are immediately revoked,
@@ -89,7 +87,7 @@ identity without ambiguity.
 ## 4. System Architecture
 
 ```
-Client (React 18 PWA) ── HTTPS / JWT ──► Flask API (Railway)
+Client (React 18 PWA) ── HTTPS / JWT ──► Flask API (Render)
                                                │
                              ┌─────────────────┼──────────────┐
                              │                 │              │
@@ -190,9 +188,8 @@ Default credentials (dev only): `admin` / `Admin@2026`
 
 ## 10. Deployment
 
-**Backend → Railway**
-Connect repo → set env vars → Railway reads `railway.toml` → auto-deploys on push to main.
-Accepts M-Pesa GlobalPay Visa for billing.
+**Backend → Render**
+New → Blueprint → select `jameskoero/ChurchOS` → Render reads `render.yaml` → fill env vars → auto-deploys on every push to main.
 
 **Frontend → Vercel**
 Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-deploys.
@@ -222,7 +219,7 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - CORS locked to FRONTEND_URL only
 - Multi-tenant isolation — church_id on every ORM query
 - Webhook HMAC signature verification (M-Pesa + Flutterwave)
-- Passwords: Werkzeug PBKDF2-SHA256 with random salt
+- Passwords: bcrypt via Flask-Bcrypt (cost factor 12)
 
 ---
 
@@ -233,14 +230,14 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - [x] Member registry (CHR-XXXXXX)
 - [x] Attendance, Finance, Events modules
 - [x] JWT RBAC (5 roles), M-Pesa STK Push, Flutterwave
-- [x] PWA, Railway + Vercel deployment
+- [x] PWA, Render + Neon + Vercel deployment
 
-### v1.1.0
+### v2.1.0
 - [ ] SMS via Africa's Talking API
 - [ ] PDF financial reports (monthly, annual)
 - [ ] Email password reset
 
-### v2.0.0
+### v3.0.0
 - [ ] Branch-level sub-accounts
 - [ ] Cross-branch reporting for Overseers and Bishops
 - [ ] React Native mobile app
@@ -251,11 +248,11 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 
 ### v2.0.0 — 2026-05-27
 - Rebranded from CMDMS (Carwash Main Altar) to ChurchOS
-- Deployed on Render + Neon + Vercel + Vercel
+- Deployed on Render + Neon + Vercel
 - Member IDs updated from MRH-XXXXXX to CHR-XXXXXX
 - Added Flutterwave alongside M-Pesa
 - JWT refresh token rotation, rate limiting, webhook verification
-- Fixed CI/CD workflow for Railway + Vercel
+- Fixed CI/CD workflow for Render + Neon + Vercel
 
 ---
 
