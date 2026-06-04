@@ -118,7 +118,7 @@ export default function Profile() {
       {/* System info */}
       <div className="card" style={{ marginTop: '1.25rem', background: 'var(--navy)', color: 'var(--white)' }}>
         <p style={{ color: 'var(--gold)', fontFamily: 'var(--font-display)', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
-          CDMS V2 · Ministry of Repentance & Holiness
+          ChurchOS · Church Management Platform
         </p>
         <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
           Church Digital Management System<br />
