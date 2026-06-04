@@ -1,4 +1,4 @@
-# config.py - ChurchOS production config
+# config.py - ChurchOS
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -11,8 +11,8 @@ def _require(key):
     v = os.environ.get(key)
     if not v:
         raise EnvironmentError(
-            f"ChurchOS: required env var "
-            f"'{key}' is not set.")
+            f"Required env var '{key}' "
+            f"is not set.")
     return v
 
 
@@ -20,10 +20,6 @@ class Config:
     SECRET_KEY = _require("SECRET_KEY")
     JWT_SECRET_KEY = _require(
         "JWT_SECRET_KEY")
-
-    # Neon serverless: use NullPool so every
-    # request gets a fresh connection.
-    # Never reuse connections across requests.
     SQLALCHEMY_DATABASE_URI = _require(
         "DATABASE_URL")
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -34,7 +30,6 @@ class Config:
         },
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(
         hours=8)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(
@@ -44,7 +39,6 @@ class Config:
         "access", "refresh"]
     JWT_TOKEN_LOCATION = ["headers"]
     JWT_HEADER_TYPE = "Bearer"
-
     FRONTEND_URL = os.environ.get(
         "FRONTEND_URL",
         "https://churchos-app.vercel.app")
@@ -69,9 +63,7 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_ECHO = True
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "connect_args": {},
-    }
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     FRONTEND_URL = "http://localhost:3000"
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get(
@@ -88,6 +80,15 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = (
         "sqlite:///:memory:")
-    JWT_SECRET_KEY = "test-jwt-only"
-    SECRET_KEY = "test-secret-only"
+    JWT_SECRET_KEY = "test-only"
+    SECRET_KEY = "test-only"
     SQLALCHEMY_ENGINE_OPTIONS = {}
+
+
+# THIS DICT IS WHAT app.py NEEDS
+config = {
+    "development": DevelopmentConfig,
+    "production":  ProductionConfig,
+    "testing":     TestingConfig,
+    "default":     ProductionConfig,
+}
