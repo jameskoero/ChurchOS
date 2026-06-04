@@ -11,7 +11,7 @@
 [![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/ci.yml/badge.svg)](https://github.com/jameskoero/ChurchOS/actions)
 
 **Backend:** `https://churchos-production-91e8.up.railway.app` | **Frontend:** `https://churchos.vercel.app`
-**Version:** v1.0.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
+**Version:** v2.0.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
 
 ---
 
@@ -107,11 +107,11 @@ Every SQLAlchemy query filtered by church_id at the ORM layer.
 | Layer | Technology |
 |---|---|
 | Backend | Python 3.11, Flask 3.0, SQLAlchemy, Flask-JWT-Extended |
-| Database | PostgreSQL (Railway prod) / SQLite (dev) |
+| Database | PostgreSQL via Neon (prod) / SQLite (dev) |
 | Frontend | React 18, React Router 6, Recharts, Axios |
 | Auth | JWT access + refresh tokens, RBAC (5 roles) |
 | Payments | M-Pesa Daraja STK Push, Flutterwave |
-| Deploy | Railway (backend + DB) + Vercel (frontend) |
+| Deploy | Render (backend) + Neon (DB) + Vercel (frontend) |
 | PWA | Service Worker, Web App Manifest |
 | CI/CD | GitHub Actions |
 
@@ -205,7 +205,7 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 |---|---|---|
 | SECRET_KEY | Yes | Flask session signing |
 | JWT_SECRET_KEY | Yes | Must differ from SECRET_KEY |
-| DATABASE_URL | Yes | Railway PostgreSQL URL |
+| DATABASE_URL | Yes | Neon PostgreSQL connection URL |
 | FRONTEND_URL | Yes | Vercel URL for CORS |
 | MPESA_CONSUMER_KEY | M-Pesa | Daraja API credentials |
 | MPESA_CONSUMER_SECRET | M-Pesa | Daraja API credentials |
@@ -228,7 +228,7 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 
 ## 13. Roadmap
 
-### v1.0.0 — Current
+### v2.0.0 — Current
 - [x] Multi-church tenancy, 30-day trial
 - [x] Member registry (CHR-XXXXXX)
 - [x] Attendance, Finance, Events modules
@@ -249,9 +249,9 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 
 ## 14. Changelog
 
-### v1.0.0 — 2026-05-27
+### v2.0.0 — 2026-05-27
 - Rebranded from CMDMS (Carwash Main Altar) to ChurchOS
-- Migrated from Render to Railway + Vercel
+- Deployed on Render + Neon + Vercel + Vercel
 - Member IDs updated from MRH-XXXXXX to CHR-XXXXXX
 - Added Flutterwave alongside M-Pesa
 - JWT refresh token rotation, rate limiting, webhook verification
