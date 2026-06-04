@@ -76,10 +76,10 @@ export default function Login() {
             fontWeight: 700,
             marginBottom: '0.25rem'
           }}>
-            CDMS V2
+            ChurchOS
           </h1>
           <p style={{ color: 'var(--gray-600)', fontSize: '0.82rem' }}>
-            Ministry of Repentance & Holiness
+            Church Management Platform
           </p>
           <div style={{
             width: 40, height: 2, background: 'var(--gold)',
