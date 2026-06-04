@@ -3,14 +3,38 @@
 > Africa-first multi-tenant SaaS for church governance, financial management,
 > and member administration.
 
-[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
-[![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=flat&logo=postgresql&logoColor=white)](https://railway.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/ci.yml/badge.svg)](https://github.com/jameskoero/ChurchOS/actions)
+[
 
-**Backend:** `https://churchos-yitr.onrender.com` | **Frontend:** `https://churchos.vercel.app`
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)
+
+](https://python.org)
+[
+
+![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)
+
+](https://flask.palletsprojects.com)
+[
+
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)
+
+](https://react.dev)
+[
+
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=flat&logo=postgresql&logoColor=white)
+
+](https://neon.tech)
+[
+
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+](LICENSE)
+[
+
+![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/ci.yml/badge.svg)
+
+](https://github.com/jameskoero/ChurchOS/actions)
+
+**Backend:** `https://churchos-yitr.onrender.com` | **Frontend:** `https://churchos-app.vercel.app`
 **Version:** v2.0.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
 
 ---
@@ -72,7 +96,9 @@ targeting rapid iteration. The application is small enough to reason about every
 and PWA offline behaviour all require a React SPA. Deployed independently on Vercel
 so the API and UI can be updated separately.
 
-**Why Render + Neon?** Neon PostgreSQL is free and durable with no expiry — critical for a church depending on years of financial records. Render deploys Docker containers reliably and auto-deploys on every push. Billing via M-Pesa GlobalPay Visa.
+**Why Render + Neon?** Neon PostgreSQL is free and durable with no expiry — critical
+for a church depending on years of financial records. Render deploys Docker containers
+reliably and auto-deploys on every push. Billing via M-Pesa GlobalPay Visa.
 
 **Why JWT with refresh token rotation?** Access tokens expire in 8 hours. Refresh
 tokens rotate on every use — if a token is used twice, both are immediately revoked,
@@ -86,14 +112,14 @@ identity without ambiguity.
 
 ## 4. System Architecture
 
-```
+\`\`\`
 Client (React 18 PWA) ── HTTPS / JWT ──► Flask API (Render)
                                                │
-                             ┌─────────────────┼──────────────┐
+                             .─────────────────+────────────.
                              │                 │              │
                         PostgreSQL       M-Pesa Daraja   Flutterwave
-                        (Railway)        STK Push API    Webhooks
-```
+                        (Neon)           STK Push API    Webhooks
+\`\`\`
 
 Seven Blueprint modules: auth · members · attendance · finance · events · users · dashboard.
 Every SQLAlchemy query filtered by church_id at the ORM layer.
@@ -162,12 +188,13 @@ All endpoints require `Authorization: Bearer <access_token>` except `/api/auth/l
 | POST | /api/finance/mpesa/stk | Trigger M-Pesa STK Push |
 | GET/POST | /api/events | List or create events |
 | GET | /api/dashboard | Aggregate KPIs + chart data |
+| GET | /api/health | Health check |
 
 ---
 
 ## 9. Local Development
 
-```bash
+\`\`\`bash
 # Backend
 cd backend
 python -m venv venv && source venv/bin/activate
@@ -180,7 +207,7 @@ cd frontend
 npm install
 echo "REACT_APP_API_URL=http://localhost:5000" > .env.local
 npm start
-```
+\`\`\`
 
 Default credentials (dev only): `admin` / `Admin@2026`
 
@@ -188,8 +215,12 @@ Default credentials (dev only): `admin` / `Admin@2026`
 
 ## 10. Deployment
 
+**Database → Neon**
+Create a project at neon.tech. Copy the pooled connection string as `DATABASE_URL`.
+
 **Backend → Render**
-New → Blueprint → select `jameskoero/ChurchOS` → Render reads `render.yaml` → fill env vars → auto-deploys on every push to main.
+New → Blueprint → select `jameskoero/ChurchOS` → Render reads `render.yaml` →
+fill env vars → auto-deploys on every push to main.
 
 **Frontend → Vercel**
 Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-deploys.
@@ -202,7 +233,7 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 |---|---|---|
 | SECRET_KEY | Yes | Flask session signing |
 | JWT_SECRET_KEY | Yes | Must differ from SECRET_KEY |
-| DATABASE_URL | Yes | Neon PostgreSQL connection URL |
+| DATABASE_URL | Yes | Neon PostgreSQL pooled connection URL |
 | FRONTEND_URL | Yes | Vercel URL for CORS |
 | MPESA_CONSUMER_KEY | M-Pesa | Daraja API credentials |
 | MPESA_CONSUMER_SECRET | M-Pesa | Daraja API credentials |
@@ -231,11 +262,13 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - [x] Attendance, Finance, Events modules
 - [x] JWT RBAC (5 roles), M-Pesa STK Push, Flutterwave
 - [x] PWA, Render + Neon + Vercel deployment
+- [x] NullPool for Neon serverless stability
 
 ### v2.1.0
 - [ ] SMS via Africa's Talking API
 - [ ] PDF financial reports (monthly, annual)
 - [ ] Email password reset
+- [ ] Kenyan county-level church search
 
 ### v3.0.0
 - [ ] Branch-level sub-accounts
@@ -246,13 +279,15 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 
 ## 14. Changelog
 
-### v2.0.0 — 2026-05-27
-- Rebranded from CMDMS (Carwash Main Altar) to ChurchOS
+### v2.0.0 — 2026-06-04
+- Rebranded from CMDMS to ChurchOS
 - Deployed on Render + Neon + Vercel
 - Member IDs updated from MRH-XXXXXX to CHR-XXXXXX
 - Added Flutterwave alongside M-Pesa
 - JWT refresh token rotation, rate limiting, webhook verification
-- Fixed CI/CD workflow for Render + Neon + Vercel
+- Fixed config dict missing from config.py (root cause of 500 errors)
+- Added NullPool for Neon serverless connection stability
+- Fixed wsgi.py config_name resolution
 
 ---
 
