@@ -16,7 +16,7 @@ export default function Layout() {
   const {user,logout}=useAuth();
   const navigate=useNavigate();
   const [sidebarOpen,setSidebarOpen]=useState(false);
-  const [churchName,setChurchName]=useState('ChurchOS');
+  const [churchName,setChurchName]=useState('Church Management Platform');
   useEffect(()=>{
     churchesAPI.getAll().then(r=>{if(r.data.churches?.[0])setChurchName(r.data.churches[0].name);}).catch(()=>{});
   },[]);
@@ -48,7 +48,7 @@ export default function Layout() {
         <div style={{padding:'1rem 1.25rem',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
           <NavLink to='/profile' style={{textDecoration:'none'}}>
             <div style={{display:'flex',alignItems:'center',gap:'0.75rem',marginBottom:'0.75rem'}}>
-              <div style={{width:36,height:36,borderRadius:'}50%',background:'var(--gold)',
+              <div style={{width:36,height:36,borderRadius:'50%',background:'var(--gold)',
                 display:'flex',alignItems:'center',justifyContent:'center',
                 fontWeight:700,color:'var(--navy)',fontSize:'0.9rem'}}>
                 {(user?.username||'U')[0].toUpperCase()}
@@ -72,13 +72,13 @@ export default function Layout() {
           display:window.innerWidth>=900?'none':'block'}}/>)}
       <div style={{flex:1,marginLeft:window.innerWidth>=900?240:0,display:'flex',flexDirection:'column',minHeight:'100vh'}}>
         <header style={{background:'var(--white)',borderBottom:'1px solid var(--gray-200)',
-          padding:'0.85rem 1.5rem',display:'flex',alignItems:'center''justifyContent:'space-between',
-          position:'sticky',op:0,zIndex:100,boxShadow:'0 1px 6px rgba(0,0,0,0.06)'}}>
+          padding:'0.85rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between',
+          position:'sticky',top:0,zIndex:100,boxShadow:'0 1px 6px rgba(0,0,0,0.06)'}}>
           <button onClick={()=>setSidebarOpen(!sidebarOpen)}
             style={{background:'none',border:'none',cursor:'pointer',fontSize:'1.2rem',
-              color:'var(--navy)',display:window.innerWidth>=900?'none':'block'}}>[2630</button>
+              color:'var(--navy)',display:window.innerWidth>=900?'none':'block'}}>&#9776;</button>
           <div style={{fontFamily:'var(--font-display)',color:'var(--navy)',
-            display:window.innerWidth<900?'block':'~one'}}>ChurchOS</div>
+            display:window.innerWidth<900?'block':'none'}}>ChurchOS</div>
           <div style={{fontSize:'0.8rem',color:'var(--gray-600)',display:'flex',alignItems:'center',gap:'0.5rem'}}>
             <span style={{width:8,height:8,borderRadius:'50%',background:'var(--success)',display:'inline-block'}}/>
             {new Date().toLocaleDateString('en-KE',{weekday:'short',year:'numeric',month:'short',day:'numeric'})}
