@@ -15,7 +15,7 @@ export function register(config) {
       if (isLocalhost) {
         checkValidServiceWorker(swUrl, config);
         navigator.serviceWorker.ready.then(() => {
-          console.log('CDMS running in offline-ready mode (localhost).');
+          console.log('ChurchOS running in offline-ready mode (localhost).');
         });
       } else {
         registerValidSW(swUrl, config);

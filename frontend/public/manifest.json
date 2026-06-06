@@ -1,31 +1,11 @@
 {
-  "short_name": "CDMS",
-  "name": "Ministry of Repentance & Holiness - CDMS V2",
-  "description": "Church Member Data Management System",
+  "short_name": "ChurchOS",
+  "name": "ChurchOS - Church Management Platform",
   "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "logo192.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
-    }
+    {"src": "favicon.ico", "sizes": "64x64 32x32 24x24 16x16", "type": "image/x-icon"}
   ],
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#0D1B2A",
-  "background_color": "#0D1B2A",
-  "orientation": "portrait-primary",
-  "categories": ["productivity", "utilities"],
-  "lang": "en"
+  "background_color": "#0D1B2A"
 }
