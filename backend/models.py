@@ -1,3 +1,54 @@
+# ── Kenya constants (required by routes/churches.py) ──────────────────────────
+KENYAN_COUNTIES = [
+    'Mombasa','Kwale','Kilifi','Tana River','Lamu','Taita Taveta',
+    'Garissa','Wajir','Mandera','Marsabit','Isiolo','Meru',
+    'Tharaka-Nithi','Embu','Kitui','Machakos','Makueni',
+    'Nyandarua','Nyeri','Kirinyaga',"Murang'a",'Kiambu',
+    'Turkana','West Pokot','Samburu','Trans Nzoia','Uasin Gishu',
+    'Elgeyo-Marakwet','Nandi','Baringo','Laikipia','Nakuru',
+    'Narok','Kajiado','Kericho','Bomet','Kakamega','Vihiga',
+    'Bungoma','Busia','Siaya','Kisumu','Homa Bay','Migori',
+    'Kisii','Nyamira','Nairobi',
+]  # 47 counties
+
+DENOMINATIONS = [
+    'Pentecostal Assemblies of God (PAG)',
+    'Anglican Church of Kenya (ACK)',
+    'Roman Catholic',
+    'Presbyterian Church of East Africa (PCEA)',
+    'Africa Inland Church (AIC)',
+    'Full Gospel Churches of Kenya',
+    'Seventh Day Adventist (SDA)',
+    'Baptist Convention of Kenya',
+    'Methodist Church in Kenya',
+    'Redeemed Gospel Church',
+    'Deliverance Church',
+    'CITAM (Christ is the Answer Ministries)',
+    'Nairobi Chapel',
+    'Assemblies of God',
+    'Africa Gospel Church',
+    'Friends Church Kenya (Quakers)',
+    'Salvation Army Kenya',
+    'Other',
+]
+
+CHURCH_SIZES = [
+    'Small (under 50 members)',
+    'Medium (50-200 members)',
+    'Large (200-1,000 members)',
+    'Cathedral (1,000+ members)',
+]
+
+SUBSCRIPTION_PLANS = ['trial', 'seed', 'growth', 'parish', 'cathedral']
+
+PLAN_LIMITS = {
+    'trial':    {'members': 50,    'price_kes': 0},
+    'seed':     {'members': 100,   'price_kes': 1500},
+    'growth':   {'members': 500,   'price_kes': 4500},
+    'parish':   {'members': 2000,  'price_kes': 9000},
+    'cathedral':{'members': 99999, 'price_kes': 18000},
+}
+
 from datetime import datetime, date
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
