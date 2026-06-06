@@ -1,34 +1,87 @@
 import axios from 'axios';
-const BASE_URL = process.env.REACT_APP_API_URL || '/api';
-const api = axios.create({baseURL:BASE_URL,timeout:15000,headers:{'Content-Type':'application/json'}});
+
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+const api = axios.create({ baseURL: API });
+
 api.interceptors.request.use(config => {
-  const t = localStorage.getItem('access_token');
-  if (t) config.headers.Authorization = `Bearer ${t}`;
+  const token = localStorage.getItem('access_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
-api.interceptors.response.use(res => res, async error => {
-  const orig = error.config;
-  if (error.response?.status===401 && !orig._retry && orig.url!=='/auth/login') {
-    orig._retry = true;
-    const rt = localStorage.getItem('refresh_token');
-    if (rt) {
+
+api.interceptors.response.use(
+  res => res,
+  async err => {
+    const original = err.config;
+    if (err.response?.status === 401 && !original._retry) {
+      original._retry = true;
       try {
-        const res = await axios.post(`${BASE_URL}/auth/refresh`,{},{headers:zAuthorization:`Bearer ${rt}`}});
-        const nt = res.data.access_token;
-        localStorage.setItem('access_token', nt);
-        orig.headers.Authorization = `Bearer ${nt}`;
-        return api(orig);
-      } catch { localStorage.clear(); window.location.href='/login'; }
-    } else { localStorage.clear(); window.location.href='/login'; }
+        const refresh = localStorage.getItem('refresh_token');
+        const res = await axios.post(`${API}/api/auth/refresh`, {},
+          { headers: { Authorization: `Bearer ${refresh}` } });
+        localStorage.setItem('access_token', res.data.access_token);
+        original.headers.Authorization = `Bearer ${res.data.access_token}`;
+        return api(original);
+      } catch {
+        localStorage.clear();
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(err);
   }
-  return Promise.reject(error);
-});
-export const authAPI = {login:c => api.post('/auth/login',c),me:() => api.get('/auth/me'),changePassword:d => api.post('/auth/change-password',d)};
-export const membersAPI = {getAll:p => api.get('/members/',{params:p}),getOne:id => api.get(`/members/${id}`),create:d => api.post('/members/',d),update:(id,d) => api.put(`/members/${id}`,d),delete:id => api.delete(`/members/${id}`),getSummary:() => api.get('/members/stats/summary'),getCellGroups:() => api.get('/members/cell-groups')};
-export const attendanceAPI = {getAll:p => api.get('/attendance/',{params:p}),create:d => api.post('/attendance/',d),delete:id => api.delete(`/attendance/${id}`),getServiceTypes:() => api.get('/attendance/service-types'),getSummary:() => api.get('/attendance/stats/summary')};
-export const financeAPI = {getAll:p => api.get('/finance/',{params:p}),create:d => api.post('/finance/',d),update:(id,d) => api.put(`/finance/${id}`,d),delete:id => api.delete(`/finance/${id}`),getSummary:p => api.get('/finance/summary',{params:p}),getTransactionTypes:() => api.get('/finance/transaction-types'),getCategories:() => api.get('/finance/categories')};
-export const eventsAPI = {getAll:p => api.get('/events/',{params:p}),getUpcoming:() => api.get('/events/upcoming'),getOne:id => api.get(`/events/${id}`),create:d => api.post('/events/',d),update:(id,d) => api.put(`/events/${id}`,d),delete:id => api.delete(`/events/${id}`)};
-export const usersAPI = {getAll:() => api.get('/users/'),create:d => api.post('/users/',d),update:(id,d) => api.put(`/users/${id}`,d),delete:id => api.delete(`/users/${id}`),getRoles:() => api.get('/users/roles')};
-export const dashboardAPI = {getStats:() => api.get('/dashboard/stats')};
-export const churchesAPI = {getAll:() => api.get('/churches/'),getOne:id => api.get(`/churches/${id}`),create:d => api.post('/churches/',d),update:(id,d) => api.put(`/churches/${id}`,d),delete:id => api.delete(`/churches/${id}`),getConstants:() => api.get('/churches/constants')};
+);
+
+export const authAPI = {
+  login:   data => api.post('/api/auth/login',   data),
+  refresh: ()   => api.post('/api/auth/refresh'),
+  logout:  ()   => api.post('/api/auth/logout'),
+};
+
+export const membersAPI = {
+  getAll:  (params) => api.get('/api/members',    { params }),
+  getOne:  (id)     => api.get(`/api/members/${id}`),
+  create:  (data)   => api.post('/api/members',   data),
+  update:  (id, data) => api.put(`/api/members/${id}`, data),
+  remove:  (id)     => api.delete(`/api/members/${id}`),
+};
+
+export const attendanceAPI = {
+  getAll:  (params) => api.get('/api/attendance', { params }),
+  create:  (data)   => api.post('/api/attendance', data),
+};
+
+export const financeAPI = {
+  getAll:  (params) => api.get('/api/finance',    { params }),
+  create:  (data)   => api.post('/api/finance',   data),
+  stkPush: (data)   => api.post('/api/finance/mpesa/stk', data),
+};
+
+export const eventsAPI = {
+  getAll:  (params) => api.get('/api/events',     { params }),
+  create:  (data)   => api.post('/api/events',    data),
+  update:  (id, data) => api.put(`/api/events/${id}`, data),
+  remove:  (id)     => api.delete(`/api/events/${id}`),
+};
+
+export const usersAPI = {
+  getAll:  ()       => api.get('/api/users'),
+  create:  (data)   => api.post('/api/users',     data),
+  update:  (id, data) => api.put(`/api/users/${id}`, data),
+  remove:  (id)     => api.delete(`/api/users/${id}`),
+};
+
+export const dashboardAPI = {
+  get: () => api.get('/api/dashboard'),
+};
+
+export const churchesAPI = {
+  getAll:     ()        => api.get('/api/churches/'),
+  getOne:     (id)      => api.get(`/api/churches/${id}`),
+  create:     (data)    => api.post('/api/churches/', data),
+  update:     (id, data) => api.put(`/api/churches/${id}`, data),
+  remove:     (id)      => api.delete(`/api/churches/${id}`),
+  constants:  ()        => api.get('/api/churches/constants'),
+};
+
 export default api;
