@@ -1,11 +1,28 @@
 {
   "short_name": "ChurchOS",
-  "name": "ChurchOS - Church Management Platform",
+  "name": "ChurchOS \u2014 Church Management Platform",
+  "description": "Africa-first church governance and financial management",
   "icons": [
-    {"src": "favicon.ico", "sizes": "64x64 32x32 24x24 16x16", "type": "image/x-icon"}
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#0D1B2A",
-  "background_color": "#0D1B2A"
+  "theme_color": "#1a2744",
+  "background_color": "#ffffff"
 }

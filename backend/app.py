@@ -81,7 +81,7 @@ def _seed():
         church = Church(
             name='Migosi Main Altar',
             county='Kisumu', sub_county='Kisumu Central',
-            denomination='Migosi Main Altar',
+            denomination='Full Gospel Churches of Kenya',
             size='Large (200-1,000 members)',
             member_prefix='CHR', subscription_plan='trial',
             trial_ends_at=datetime.utcnow() + timedelta(days=30),

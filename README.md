@@ -162,7 +162,7 @@ All models carry `church_id` FK. Every query filtered on this field.
 
 | Model | Key columns |
 |---|---|
-| Church | id, name, subscription_plan, trial_ends_at |
+| Church | id, name, county, sub_county, denomination, size, member_prefix, subscription_plan, trial_ends_at, is_active |
 | User | id, church_id, username, password_hash, role |
 | Member | id, church_id, member_id (CHR-XXXXXX), full_name, phone |
 | Attendance | id, church_id, member_id, service_type, service_date |
@@ -187,6 +187,9 @@ All endpoints require `Authorization: Bearer <access_token>` except `/api/auth/l
 | GET/POST | /api/finance | Ledger or record transaction |
 | POST | /api/finance/mpesa/stk | Trigger M-Pesa STK Push |
 | GET/POST | /api/events | List or create events |
+| GET | /api/churches/constants | Counties, denominations, sizes (public) |
+| GET/POST | /api/churches | List or create churches (admin) |
+| GET/PUT/DELETE | /api/churches/:id | Read, update, delete church (admin) |
 | GET | /api/dashboard | Aggregate KPIs + chart data |
 | GET | /api/health | Health check |
 
