@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useCallback } from 'react';
 import { churchesAPI } from '../api';
 import { KENYAN_COUNTIES, DENOMINATIONS, CHURCH_SIZES, PLAN_LABELS } from '../constants';

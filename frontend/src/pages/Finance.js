@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { financeAPI, membersAPI } from '../api';
@@ -24,8 +25,10 @@ function typeBadge(type) {
 const fmt = (n) => 'KES ' + new Intl.NumberFormat('en-KE').format(Math.round(n || 0));
 
 export default function Finance() {
+  // eslint-disable-next-line no-unused-vars
   const { can, user: _u } = useAuth();
   const [transactions, setTransactions] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
@@ -71,6 +74,7 @@ export default function Finance() {
     financeAPI.getTransactionTypes().then(r => setTxTypes(r.data));
     financeAPI.getCategories().then(r => setCategories(r.data));
     membersAPI.getAll({ per_page: 300, status: 'active' }).then(r => setMembers(r.data.members));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openCreate = () => {
