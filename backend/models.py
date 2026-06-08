@@ -12,6 +12,7 @@ KENYAN_COUNTIES = [
 ]  # 47 counties
 
 DENOMINATIONS = [
+    'Ministry of Repentance and Holiness',
     'Pentecostal Assemblies of God (PAG)',
     'Anglican Church of Kenya (ACK)',
     'Roman Catholic',
@@ -74,6 +75,7 @@ KENYAN_COUNTIES = [
 
 DENOMINATIONS = [
     'Migosi Main Altar',
+    'Ministry of Repentance and Holiness',
     'Pentecostal Assemblies of God (PAG)',
     'Anglican Church of Kenya (ACK)',
     'Roman Catholic',

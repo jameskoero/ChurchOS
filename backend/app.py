@@ -78,15 +78,14 @@ def create_app(config_name=None):
 
 
 def _seed():
-    """Seed Migosi Main Altar and admin user on every startup."""
-    # Look for Migosi Main Altar specifically — not just any church
+    """Seed Migosi Main Altar under Ministry of Repentance and Holiness."""
     church = Church.query.filter_by(name='Migosi Main Altar').first()
     if not church:
         church = Church(
             name='Migosi Main Altar',
             county='Kisumu',
             sub_county='Kisumu Central',
-            denomination='Full Gospel Churches of Kenya',
+            denomination='Ministry of Repentance and Holiness',
             size='Large (200-1,000 members)',
             member_prefix='CHR',
             subscription_plan='trial',
@@ -95,14 +94,13 @@ def _seed():
         )
         db.session.add(church)
         db.session.flush()
-        print(f'Seeded: Migosi Main Altar (id={church.id})')
+        print(f'[seed] Created: Migosi Main Altar id={church.id}')
     else:
-        # Ensure existing record has is_active=True so it appears in UI
-        church.is_active = True
-        church.denomination = 'Full Gospel Churches of Kenya'
-        church.county = 'Kisumu'
+        church.is_active    = True
+        church.denomination = 'Ministry of Repentance and Holiness'
+        church.county       = 'Kisumu'
+        print(f'[seed] Updated: Migosi Main Altar id={church.id}')
 
-    # Admin user — always sync password
     admin = User.query.filter_by(role='admin').first()
     if not admin:
         admin = User(
@@ -116,4 +114,5 @@ def _seed():
         db.session.add(admin)
     admin.set_password('Admin@2026')
     db.session.commit()
-    print('Seed complete: admin / Admin@2026')
+    print('[seed] Done — admin / Admin@2026')
+

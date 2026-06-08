@@ -10,6 +10,7 @@ export const KENYAN_COUNTIES = [
   'Kisii','Nyamira','Nairobi'
 ];
 export const DENOMINATIONS = [
+  'Ministry of Repentance and Holiness',
   'Pentecostal Assemblies of God (PAG)',
   'Anglican Church of Kenya (ACK)','Roman Catholic',
   'Presbyterian Church of East Africa (PCEA)',
