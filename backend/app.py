@@ -20,9 +20,11 @@ def create_app(config_name=None):
     bcrypt.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+    _raw = app.config.get('FRONTEND_URL', '*')
+    _origins = [o.strip() for o in _raw.split(',')] if _raw != '*' else '*'
     CORS(app, resources={
         r"/api/*": {
-            "origins": app.config.get('FRONTEND_URL', '*'),
+            "origins": _origins,
             "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"]
         }
@@ -89,12 +91,13 @@ def _seed():
         )
         db.session.add(church)
         db.session.flush()
-    if not User.query.filter_by(role='admin').first():
+    admin = User.query.filter_by(role='admin').first()
+    if not admin:
         admin = User(
             username='admin', email='admin@churchos.app',
             full_name='System Administrator', role='admin',
             church_id=church.id, is_active=True
         )
-        admin.set_password('Admin@2026')
         db.session.add(admin)
+    admin.set_password('Admin@2026')  # always sync on startup
     db.session.commit()
