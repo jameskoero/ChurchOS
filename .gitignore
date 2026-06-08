@@ -39,3 +39,6 @@ logs/
 # Deployment
 .render/
 package-lock.json
+
+# Allow .env.production (contains no secrets)
+!.env.production
