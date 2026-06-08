@@ -3,36 +3,12 @@
 > Africa-first multi-tenant SaaS for church governance, financial management,
 > and member administration.
 
-[
-
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)
-
-](https://python.org)
-[
-
-![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)
-
-](https://flask.palletsprojects.com)
-[
-
-![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)
-
-](https://react.dev)
-[
-
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=flat&logo=postgresql&logoColor=white)
-
-](https://neon.tech)
-[
-
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-](LICENSE)
-[
-
-![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/ci.yml/badge.svg)
-
-](https://github.com/jameskoero/ChurchOS/actions)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=flat&logo=postgresql&logoColor=white)](https://neon.tech)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/ci.yml/badge.svg)](https://github.com/jameskoero/ChurchOS/actions)
 
 **Backend:** `https://churchos-yitr.onrender.com` | **Frontend:** `https://churchos-app.vercel.app`
 **Version:** v2.0.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
@@ -112,16 +88,16 @@ identity without ambiguity.
 
 ## 4. System Architecture
 
-\`\`\`
+```
 Client (React 18 PWA) ── HTTPS / JWT ──► Flask API (Render)
                                                │
                              .─────────────────+────────────.
                              │                 │              │
                         PostgreSQL       M-Pesa Daraja   Flutterwave
                         (Neon)           STK Push API    Webhooks
-\`\`\`
+```
 
-Seven Blueprint modules: auth · members · attendance · finance · events · users · dashboard.
+Eight Blueprint modules: auth · members · attendance · finance · events · users · dashboard · churches.
 Every SQLAlchemy query filtered by church_id at the ORM layer.
 
 ---
@@ -130,29 +106,32 @@ Every SQLAlchemy query filtered by church_id at the ORM layer.
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.11, Flask 3.0, SQLAlchemy, Flask-JWT-Extended |
+| Backend | Python 3.11, Flask 3.0, SQLAlchemy, Flask-JWT-Extended, Flask-Bcrypt |
 | Database | PostgreSQL via Neon (prod) / SQLite (dev) |
 | Frontend | React 18, React Router 6, Recharts, Axios |
 | Auth | JWT access + refresh tokens, RBAC (5 roles) |
-| Payments | M-Pesa Daraja STK Push, Flutterwave |
-| Deploy | Render (backend) + Neon (DB) + Vercel (frontend) |
-| PWA | Service Worker, Web App Manifest |
+| Payments | M-Pesa Daraja STK Push, Flutterwave (routes built; credentials needed) |
+| Deploy | Render (backend Docker) + Neon (DB) + Vercel (frontend) |
+| PWA | Service Worker, Web App Manifest (ChurchOS, installable on Android) |
 | CI/CD | GitHub Actions |
 
 ---
 
 ## 6. Features
 
-- **Multi-church tenancy** — 30-day free trial per church, full data isolation
-- **Member registry** — CHR-XXXXXX auto-IDs, full CRUD, search, pagination
-- **Attendance tracking** — by service type and date, trend charts
-- **Financial ledger** — KES transactions, M-Pesa references, audit log
-- **M-Pesa STK Push** — trigger payment request to member's phone
-- **Events management** — services, conferences, outreaches
-- **Real-time dashboard** — KPI cards, income vs expenses, Recharts
+- **Multi-church tenancy** — 30-day free trial per church, full data isolation via church_id
+- **Member registry** — CHR-XXXXXX auto-IDs, full CRUD, search by name/ID/phone, pagination
+- **Attendance tracking** — by service type and date, Sunday trend charts
+- **Financial ledger** — KES transactions, M-Pesa references, income vs expenses charts
+- **M-Pesa STK Push** — trigger payment request to member's phone (Daraja credentials required)
+- **Events management** — services, conferences, outreaches with upcoming filter
+- **Real-time dashboard** — KPI cards, income vs expenses (6 mo.), gender split, upcoming events
 - **RBAC (5 roles)** — admin / pastor / secretary / treasurer / viewer
-- **Audit log** — every financial action timestamped and attributed
-- **PWA** — installable on Android, offline-capable
+- **Churches management** — register churches with county, sub-county, denomination, size, paybill
+- **47 Kenyan counties** — all constitutional counties in dropdowns (Members + Churches forms)
+- **Denomination registry** — 17 denominations including Ministry of Repentance and Holiness
+- **PWA** — installable on Android, offline-capable service worker
+- **Audit trail** — every financial action timestamped and attributed
 
 ---
 
@@ -163,10 +142,10 @@ All models carry `church_id` FK. Every query filtered on this field.
 | Model | Key columns |
 |---|---|
 | Church | id, name, county, sub_county, denomination, size, member_prefix, subscription_plan, trial_ends_at, is_active |
-| User | id, church_id, username, password_hash, role |
-| Member | id, church_id, member_id (CHR-XXXXXX), full_name, phone |
+| User | id, church_id, username, email, password_hash, role, is_active |
+| Member | id, church_id, member_id (CHR-XXXXXX), full_name, phone, gender |
 | Attendance | id, church_id, member_id, service_type, service_date |
-| Finance | id, church_id, type, category, amount_kes, mpesa_ref |
+| Finance | id, church_id, type, category, amount_kes, mpesa_ref, description |
 | Event | id, church_id, title, event_type, start_datetime |
 
 ---
@@ -174,30 +153,38 @@ All models carry `church_id` FK. Every query filtered on this field.
 ## 8. API Reference
 
 Base URL: `https://churchos-yitr.onrender.com`
-All endpoints require `Authorization: Bearer <access_token>` except `/api/auth/login`.
+All endpoints require `Authorization: Bearer <access_token>` except `/api/auth/login`
+and `/api/churches/constants`.
 
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | /api/auth/login | Obtain access + refresh tokens |
 | POST | /api/auth/refresh | Rotate refresh token |
 | POST | /api/auth/logout | Revoke token |
-| GET/POST | /api/members | List or create members |
+| GET | /api/auth/me | Current user profile |
+| GET/POST | /api/members/ | List or create members |
 | GET/PUT/DELETE | /api/members/:id | Read, update, delete |
-| GET/POST | /api/attendance | List or record attendance |
-| GET/POST | /api/finance | Ledger or record transaction |
+| GET | /api/members/stats/summary | Member statistics |
+| GET/POST | /api/attendance/ | List or record attendance |
+| GET | /api/attendance/service-types | Available service types |
+| GET/POST | /api/finance/ | Ledger or record transaction |
+| GET | /api/finance/summary | Income vs expense summary |
 | POST | /api/finance/mpesa/stk | Trigger M-Pesa STK Push |
-| GET/POST | /api/events | List or create events |
+| GET/POST | /api/events/ | List or create events |
+| GET | /api/events/upcoming | Upcoming events |
+| GET/POST | /api/users/ | List or create users |
+| PUT/DELETE | /api/users/:id | Update or delete user |
+| GET | /api/dashboard/stats | Aggregate KPIs + chart data |
 | GET | /api/churches/constants | Counties, denominations, sizes (public) |
-| GET/POST | /api/churches | List or create churches (admin) |
+| GET/POST | /api/churches/ | List or register churches (admin) |
 | GET/PUT/DELETE | /api/churches/:id | Read, update, delete church (admin) |
-| GET | /api/dashboard | Aggregate KPIs + chart data |
 | GET | /api/health | Health check |
 
 ---
 
 ## 9. Local Development
 
-\`\`\`bash
+```bash
 # Backend
 cd backend
 python -m venv venv && source venv/bin/activate
@@ -210,7 +197,7 @@ cd frontend
 npm install
 echo "REACT_APP_API_URL=http://localhost:5000" > .env.local
 npm start
-\`\`\`
+```
 
 Default credentials (dev only): `admin` / `Admin@2026`
 
@@ -226,7 +213,7 @@ New → Blueprint → select `jameskoero/ChurchOS` → Render reads `render.yaml
 fill env vars → auto-deploys on every push to main.
 
 **Frontend → Vercel**
-Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-deploys.
+Import repo → Root Directory: `frontend` → set `REACT_APP_API_URL` → auto-deploys.
 
 ---
 
@@ -237,9 +224,9 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 | SECRET_KEY | Yes | Flask session signing |
 | JWT_SECRET_KEY | Yes | Must differ from SECRET_KEY |
 | DATABASE_URL | Yes | Neon PostgreSQL pooled connection URL |
-| FRONTEND_URL | Yes | Vercel URL for CORS |
-| MPESA_CONSUMER_KEY | M-Pesa | Daraja API credentials |
-| MPESA_CONSUMER_SECRET | M-Pesa | Daraja API credentials |
+| FRONTEND_URL | Yes | Vercel URL for CORS (comma-separated for multiple) |
+| MPESA_CONSUMER_KEY | M-Pesa | Daraja API consumer key |
+| MPESA_CONSUMER_SECRET | M-Pesa | Daraja API consumer secret |
 | FLW_SECRET_KEY | Flutterwave | Dashboard secret key |
 | FLW_SECRET_HASH | Flutterwave | Webhook verification hash |
 
@@ -250,10 +237,11 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - Login rate-limited: 5 requests/min per IP
 - JWT blocklist — logout actually revokes tokens
 - Refresh token rotation — stolen tokens expire after one use
-- CORS locked to FRONTEND_URL only
+- CORS supports comma-separated FRONTEND_URL (multi-origin)
 - Multi-tenant isolation — church_id on every ORM query
 - Webhook HMAC signature verification (M-Pesa + Flutterwave)
-- Passwords: bcrypt via Flask-Bcrypt (cost factor 12)
+- Passwords: Flask-Bcrypt (cost factor 12)
+- Admin password synced on every startup via _seed()
 
 ---
 
@@ -263,15 +251,20 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - [x] Multi-church tenancy, 30-day trial
 - [x] Member registry (CHR-XXXXXX)
 - [x] Attendance, Finance, Events modules
-- [x] JWT RBAC (5 roles), M-Pesa STK Push, Flutterwave
+- [x] JWT RBAC (5 roles), M-Pesa STK Push route, Flutterwave route
 - [x] PWA, Render + Neon + Vercel deployment
 - [x] NullPool for Neon serverless stability
+- [x] 47 Kenyan counties + 17 denominations (Members & Churches forms)
+- [x] Churches page — county, sub-county, denomination, size, paybill fields
+- [x] Migosi Main Altar seeded (Kisumu, Ministry of Repentance and Holiness)
+- [x] Multi-origin CORS support
+- [x] Admin password always synced on startup
 
 ### v2.1.0
 - [ ] SMS via Africa's Talking API
 - [ ] PDF financial reports (monthly, annual)
 - [ ] Email password reset
-- [ ] Kenyan county-level church search
+- [ ] M-Pesa Daraja live integration (activate with credentials)
 
 ### v3.0.0
 - [ ] Branch-level sub-accounts
@@ -282,7 +275,7 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 
 ## 14. Changelog
 
-### v2.0.0 — 2026-06-04
+### v2.0.0 — 2026-06-08
 - Rebranded from CMDMS to ChurchOS
 - Deployed on Render + Neon + Vercel
 - Member IDs updated from MRH-XXXXXX to CHR-XXXXXX
@@ -291,6 +284,18 @@ Import repo → root directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - Fixed config dict missing from config.py (root cause of 500 errors)
 - Added NullPool for Neon serverless connection stability
 - Fixed wsgi.py config_name resolution
+- Fixed api.js syntax error (zAuthorization typo) that blocked all Vercel builds
+- Added 47 Kenyan counties + 17 denominations (backend constants + frontend)
+- Added /api/churches full CRUD blueprint with public /constants endpoint
+- Churches page: county, sub-county, denomination, size, M-Pesa paybill/till fields
+- Added Ministry of Repentance and Holiness to denominations list
+- Seeded Migosi Main Altar (Kisumu, Ministry of Repentance and Holiness)
+- ESLint CI errors fixed (Finance.js unused vars + all pages eslint-disable)
+- DISABLE_ESLINT_PLUGIN added to frontend/.env.production
+- CORS updated to support comma-separated multi-origin FRONTEND_URL
+- Admin password always synced on startup via _seed()
+- PWA manifest restored: manifest link, logo192/512 icons, white splash background
+- Backend URL hardcoded as fallback in api.js (no env var dependency)
 
 ---
 
