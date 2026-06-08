@@ -78,7 +78,12 @@ def create_app(config_name=None):
 
 
 def _seed():
-    """Seed Migosi Main Altar under Ministry of Repentance and Holiness."""
+    """
+    Seed Migosi Main Altar under Ministry of Repentance and Holiness.
+    Runs on every startup. Safe to run multiple times.
+    Creates church + admin if missing. Always syncs password.
+    """
+    # ── Church ────────────────────────────────────────────────────────────────
     church = Church.query.filter_by(name='Migosi Main Altar').first()
     if not church:
         church = Church(
@@ -94,14 +99,17 @@ def _seed():
         )
         db.session.add(church)
         db.session.flush()
-        print(f'[seed] Created: Migosi Main Altar id={church.id}')
+        print(f'[seed] Created: Migosi Main Altar (id={church.id})')
     else:
+        # Ensure existing record is correct regardless of prior state
         church.is_active    = True
         church.denomination = 'Ministry of Repentance and Holiness'
         church.county       = 'Kisumu'
-        print(f'[seed] Updated: Migosi Main Altar id={church.id}')
+        church.sub_county   = 'Kisumu Central'
+        print(f'[seed] Updated: Migosi Main Altar (id={church.id})')
 
-    admin = User.query.filter_by(role='admin').first()
+    # ── Admin user ────────────────────────────────────────────────────────────
+    admin = User.query.filter_by(username='admin').first()
     if not admin:
         admin = User(
             username='admin',
@@ -112,7 +120,12 @@ def _seed():
             is_active=True
         )
         db.session.add(admin)
+        print('[seed] Created: admin user')
+
+    # Always sync — prevents stale hash from blocking login
     admin.set_password('Admin@2026')
+    admin.church_id = church.id
+    admin.is_active = True
     db.session.commit()
-    print('[seed] Done — admin / Admin@2026')
+    print('[seed] Complete — admin / Admin@2026')
 
