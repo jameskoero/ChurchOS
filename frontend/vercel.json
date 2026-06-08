@@ -1,8 +1,5 @@
 {
-  "framework": "create-react-app",
-  "env": {
-    "REACT_APP_API_URL": "https://churchos-yitr.onrender.com"
-  },
-  "buildCommand": "npm run build",
-  "outputDirectory": "build"
+  "buildCommand": "REACT_APP_API_URL=https://churchos-yitr.onrender.com DISABLE_ESLINT_PLUGIN=true npm run build",
+  "outputDirectory": "build",
+  "framework": "create-react-app"
 }
