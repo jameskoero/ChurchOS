@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChurchOS API Diagnostic</title>
+<style>
+  body{font-family:monospace;padding:20px;background:#0D1B2A;color:#fff;font-size:14px}
+  h2{color:#C9A84C}
+  .box{background:#1a2744;padding:15px;border-radius:8px;margin:10px 0;
+       word-break:break-all;white-space:pre-wrap}
+  .ok{color:#4CAF50} .err{color:#f44336} .warn{color:#ff9800}
+  button{background:#C9A84C;color:#000;border:none;padding:12px 24px;
+         border-radius:6px;font-size:16px;cursor:pointer;width:100%;margin:5px 0}
+</style>
+</head>
+<body>
+<h2>ChurchOS API Diagnostic</h2>
+
+<div class="box" id="config">Loading config...</div>
+
+<button onclick="testHealth()">1. Test Health Check</button>
+<div class="box" id="health">Not tested</div>
+
+<button onclick="testLogin()">2. Test Login (admin / Admin@2026)</button>
+<div class="box" id="login">Not tested</div>
+
+<script>
+const API = 'https://churchos-yitr.onrender.com';
+
+document.getElementById('config').textContent =
+  'API URL: ' + API + '\n' +
+  'Frontend: ' + window.location.origin + '\n' +
+  'Time: ' + new Date().toISOString();
+
+async function testHealth() {
+  const el = document.getElementById('health');
+  el.className = 'box warn';
+  el.textContent = 'Testing...';
+  try {
+    const r = await fetch(API + '/api/health', {
+      method: 'GET',
+      headers: {'Accept': 'application/json'}
+    });
+    const data = await r.json();
+    el.className = 'box ok';
+    el.textContent = 'STATUS: ' + r.status + '\n' + JSON.stringify(data, null, 2);
+  } catch(e) {
+    el.className = 'box err';
+    el.textContent = 'ERROR: ' + e.message + '\n\nThis is likely a CORS error.';
+  }
+}
+
+async function testLogin() {
+  const el = document.getElementById('login');
+  el.className = 'box warn';
+  el.textContent = 'Testing login...';
+  try {
+    const r = await fetch(API + '/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({username: 'admin', password: 'Admin@2026'})
+    });
+    const data = await r.json();
+    if (r.status === 200) {
+      el.className = 'box ok';
+      el.textContent = '✅ LOGIN SUCCESS\nStatus: ' + r.status +
+        '\nUser: ' + data.user?.username +
+        '\nRole: ' + data.user?.role +
+        '\nToken: ' + (data.access_token ? 'received ✅' : 'MISSING ❌');
+    } else {
+      el.className = 'box err';
+      el.textContent = '❌ LOGIN FAILED\nStatus: ' + r.status +
+        '\nResponse: ' + JSON.stringify(data, null, 2);
+    }
+  } catch(e) {
+    el.className = 'box err';
+    el.textContent = 'NETWORK ERROR: ' + e.message +
+      '\n\nCORS is blocking the request.' +
+      '\n\nThe browser Origin header: ' + window.location.origin +
+      '\nBackend must allow this origin.';
+  }
+}
+</script>
+</body>
+</html>
