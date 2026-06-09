@@ -1,3 +1,4 @@
+// CACHE_VERSION=1780983846
 // PWA Service Worker Registration
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
