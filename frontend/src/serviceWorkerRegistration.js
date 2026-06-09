@@ -66,7 +66,15 @@ function checkValidServiceWorker(swUrl, config) {
 export function unregister() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready
-      .then(registration => { registration.unregister(); })
-      .catch(error => { console.error(error.message); });
+      .then(registration => {
+        registration.unregister();
+      })
+      .catch(() => {});
+    // Clear all caches
+    if (window.caches) {
+      caches.keys().then(keys => {
+        keys.forEach(key => caches.delete(key));
+      });
+    }
   }
 }
