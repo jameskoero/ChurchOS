@@ -20,27 +20,12 @@ def create_app(config_name=None):
     bcrypt.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    # ── CORS — hardcoded origins (no env var dependency) ────────────────────
-    ALLOWED_ORIGINS = [
-        "https://churchos-app.vercel.app",
-        "https://church-os-three.vercel.app",
-        "http://localhost:3000",
-        "http://localhost:5000",
-    ]
-
-    def _cors_check(origin):
-        if not origin:
-            return False
-        # Allow any Vercel deployment of this project
-        if origin.endswith(".vercel.app"):
-            return True
-        return origin in ALLOWED_ORIGINS
-
+    # CORS — allow all origins (JWT protects all routes)
     CORS(app, resources={
         r"/api/*": {
-            "origins": _cors_check,
+            "origins": "*",
             "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
+            "allow_headers": ["Content-Type", "Authorization"]
         }
     })
     from routes.auth       import auth_bp
