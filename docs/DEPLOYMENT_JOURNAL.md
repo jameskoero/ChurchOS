@@ -1,8 +1,8 @@
 # ChurchOS Phase 1 — Deployment Journal & Incident Post-Mortem
 
-**Period:** June 3–9, 2026
-**Author:** James Koero · ML Engineer · Kisumu, Kenya
-**Stack:** Flask 3.0 · React 18 · Neon PostgreSQL · Render · Vercel
+**Period:** June 3–9, 2026  
+**Author:** James Koero · ML Engineer · Kisumu, Kenya  
+**Stack:** Flask 3.0 · React 18 · Neon PostgreSQL · Render · Vercel  
 **Status:** ✅ Resolved — Production live as of June 9, 2026 at 09:47 EAT
 
 ---
@@ -14,7 +14,7 @@
 3. [Infrastructure Architecture](#3-infrastructure-architecture)
 4. [Incident Timeline](#4-incident-timeline)
 5. [Root Cause Analysis](#5-root-cause-analysis)
-6. [Fix History — Every Commit Explained](#6-fix-history)
+6. [Fix History](#6-fix-history)
 7. [Key Technical Decisions](#7-key-technical-decisions)
 8. [Lessons Learned](#8-lessons-learned)
 9. [Production Runbook](#9-production-runbook)
@@ -28,8 +28,7 @@ ChurchOS Phase 1 is an Africa-first multi-tenant church management SaaS built
 on Flask 3.0, React 18, Neon PostgreSQL, Render, and Vercel. The deployment
 took six days (June 3–9, 2026) and encountered a layered sequence of failures,
 each masking the next. The final symptom was a persistent browser login failure
-(`Login failed. Check credentials.`) that passed all server-side tests but
-blocked every browser request.
+that passed all server-side tests but blocked every browser request.
 
 **Root cause stack (bottom-up):**
 
@@ -39,7 +38,7 @@ blocked every browser request.
 | RC-2 | `REACT_APP_API_URL` not set in Vercel build | API calls went to Vercel, not Render |
 | RC-3 | Flask-CORS 3.x ignores Python callable as `origins` | All browser requests blocked |
 | RC-4 | Render running stale Docker image | CORS fixes never reached production |
-| RC-5 | `_seed()` used `Church.query.first()` | Migosi Main Altar never seeded |
+| RC-5 | `_seed()` used `Church.query.first()` | Pilot church never seeded |
 | RC-6 | PWA service worker cached old JS bundle | New code never reached browser |
 
 All six were resolved. The app is live.
@@ -48,21 +47,21 @@ All six were resolved. The app is live.
 
 ## 2. Project Context
 
-ChurchOS began as CMDMS (Church Member Data Management System), a CLI and
-Flask web tool for managing Ministry of Repentance and Holiness records.
-Phase 1 upgrades it to a multi-tenant SaaS with:
+ChurchOS began as CMDMS (Church Member Data Management System), a single-tenant
+CLI and Flask web tool built for one of the churches where the developer leads
+in Kisumu, Kenya. Phase 1 upgrades it to a multi-tenant SaaS capable of serving
+any Kenyan church, with:
 
 - **Multi-tenancy** — `church_id` foreign key on every model, enforced at ORM
 - **47 Kenyan counties** — constitutional county list in all location dropdowns
-- **Denomination registry** — 18 denominations including Ministry of
-  Repentance and Holiness
+- **Denomination registry** — 18 Kenyan denominations
 - **M-Pesa STK Push route** — built, awaiting Daraja credentials
 - **RBAC** — 5 roles: admin, pastor, secretary, treasurer, viewer
 - **PWA** — installable on Android, offline-capable service worker
 - **CHR-XXXXXX member IDs** — per-church sequential namespace
 
-**Pilot church:** Migosi Main Altar, Kisumu — Ministry of Repentance and
-Holiness, Kenya.
+**Pilot church:** Migosi Main Altar, Kisumu County — a local Pentecostal church
+where the developer leads, used as the Phase 1 test tenant.
 
 ---
 
@@ -70,114 +69,101 @@ Holiness, Kenya.
 
 ```
 Browser (Android Chrome)
-    │
-    │  HTTPS + JWT Bearer token
-    ▼
-┌──────────────────────────────────────────────────┐
-│  Vercel — churchos-app.vercel.app                │
-│  Project: churchos.vercel.app (james-koero acct) │
-│  Build: REACT_APP_API_URL baked via buildCommand │
-│  Root Directory: frontend/                       │
-│  Node: 20.x · Framework: Create React App        │
-└──────────────────────────────────────────────────┘
-    │
-    │  POST https://churchos-yitr.onrender.com/api/*
-    │  Header: Authorization: Bearer <jwt>
-    ▼
-┌──────────────────────────────────────────────────┐
-│  Render — churchos-yitr.onrender.com             │
-│  Runtime: Python 3.11, Flask 3.0, Docker         │
-│  CORS: origins="*" (Flask-CORS 3.x)              │
-│  Auth: Flask-JWT-Extended + Flask-Bcrypt          │
-│  Seed: _seed() on every startup (idempotent)     │
-└──────────────────────────────────────────────────┘
-    │
-    │  postgresql://...@ep-morning-darkness-ab3lqoj1
-    │  NullPool (serverless-safe, no persistent conn)
-    ▼
-┌──────────────────────────────────────────────────┐
-│  Neon PostgreSQL                                 │
-│  Tables: church, user, member, attendance,       │
-│          finance, event                          │
-│  Seed: Migosi Main Altar (id=1, is_active=True)  │
-└──────────────────────────────────────────────────┘
+    |
+    |  HTTPS + JWT Bearer token
+    v
+Vercel — churchos-app.vercel.app
+  Build: REACT_APP_API_URL baked via buildCommand
+  Root Directory: frontend/  |  Node: 20.x  |  Framework: CRA
+    |
+    |  POST https://churchos-yitr.onrender.com/api/*
+    v
+Render — churchos-yitr.onrender.com
+  Runtime: Python 3.11, Flask 3.0, Docker
+  CORS: origins=* (Flask-CORS 3.x)
+  Auth: Flask-JWT-Extended + Flask-Bcrypt
+  Seed: _seed() on every startup (idempotent)
+    |
+    |  postgresql://...@ep-morning-darkness-ab3lqoj1
+    |  NullPool (serverless-safe)
+    v
+Neon PostgreSQL
+  Tables: church, user, member, attendance, finance, event
+  Seed:   Migosi Main Altar (id=1, is_active=True)
 ```
 
-**Previous infrastructure (migrated away from):**
-- Railway → replaced by Render (free tier, no expiry)
-- Old DATABASE_URL (`ep-morning-darkness-ab3lqoj1`) still in use — correct
+**Migrated away from:** Railway — replaced by Render (free tier, no expiry).
 
 ---
 
 ## 4. Incident Timeline
 
-### June 3–4, 2026 — Initial Deployment
+### June 3–4, 2026 — Initial Deployment to Render
 
-Migrated from Railway to Render. Core blockers resolved sequentially:
+Migrated from Railway to Render. Blockers resolved in sequence:
 
-- `config.py` missing `config = {}` dict → Flask `KeyError` on startup
-- `wsgi.py` passing wrong config key string → `production` vs `ProductionConfig`
-- Docker layer cache serving old Python → fixed by touching `requirements.txt`
+- `config.py` missing `config = {}` dict — Flask `KeyError` on startup
+- `wsgi.py` passing wrong config key string
+- Docker layer cache serving old Python — fixed by touching `requirements.txt`
 - Neon `NullPool` fix for serverless connection drops
-- `bcrypt` vs Werkzeug PBKDF2 hash mismatch → standardised on Flask-Bcrypt
+- `bcrypt` vs Werkzeug PBKDF2 hash mismatch — standardised on Flask-Bcrypt
 
 All 10 API endpoints verified live by June 4.
 
 ### June 5–6, 2026 — Phase 1 Feature Build
 
-Added multi-tenancy features:
-- 47 Kenyan counties in `models.py` and `frontend/src/constants.js`
-- 18 denominations including Ministry of Repentance and Holiness
-- Subscription tiers (trial/seed/growth/parish/cathedral at KES 0–18,000)
-- `churches` table with full CRUD blueprint + `/api/churches/constants` public
-- `Churches.js` page with county/sub-county/denomination/size/paybill fields
-- Dynamic church name in `Layout.js` from `churchesAPI.getAll()`
-- Migosi Main Altar seeded as `church_id=1`
+Added multi-tenancy: 47 counties, 18 denominations, subscription tiers,
+`churches` blueprint, `Churches.js` frontend page, dynamic church name in
+`Layout.js`, pilot church seeded as `church_id=1`.
 
-### June 6, 2026 (afternoon) — ESLint CI Blocks Vercel
+### June 6, 2026 — ESLint CI Blocks Vercel
 
-ESLint errors in `Finance.js` caused every Vercel build to fail:
 ```
 [eslint] src/pages/Finance.js
 Line 27: '_u' assigned but never used
-Line 74: React Hook useEffect missing dependency 'fetchSummary'
-CI=true makes all ESLint warnings fatal
+Line 74: useEffect missing dependency 'fetchSummary'
+Vercel sets CI=true — all ESLint warnings become fatal errors
 ```
 
-**Fix:** `DISABLE_ESLINT_PLUGIN=true` in buildCommand + `/* eslint-disable */`
-headers on all pages.
+Fix: `DISABLE_ESLINT_PLUGIN=true` in buildCommand plus `eslint-disable`
+headers on all page files.
 
-### June 7, 2026 — api.js Syntax Error Discovered
+### June 7, 2026 — api.js Syntax Error Found
+
+A stray `z` before `Authorization` in the refresh token headers object
+made the object literal syntactically invalid. ESLint treated it as a
+fatal compile error in every CI build since the churches feature merged.
+`api.js` was rewritten entirely.
 
 ```javascript
 // Broken (line 16):
 headers:zAuthorization:`Bearer ${rt}`}})
-//       ↑ stray 'z', missing opening { for headers object
 
 // Fixed:
 headers:{Authorization:`Bearer ${rt}`}
 ```
 
-This single typo had silently failed every Vercel build since the churches
-feature was added. Rewrote `api.js` entirely with correct syntax.
+### June 8, 2026 — REACT_APP_API_URL Missing from Vercel Build
 
-### June 8, 2026 — REACT_APP_API_URL Missing from Build
+After api.js was fixed, builds succeeded but login still failed.
+`REACT_APP_API_URL` was never set in the Vercel project dashboard.
+The fallback `BASE_URL = '/api'` resolved all API calls to Vercel's own
+domain (`https://churchos-app.vercel.app/api/...`), not Render.
 
-After api.js was fixed, Vercel builds succeeded but login still failed.
-Diagnosis: `REACT_APP_API_URL` was never set in the Vercel project dashboard.
-`api.js` fell back to `BASE_URL = '/api'`, routing all calls to
-`https://churchos-app.vercel.app/api/...` — Vercel's own domain, not Render.
+Fix — added to `frontend/vercel.json`:
 
-**Fix:** Added to `frontend/vercel.json` buildCommand:
 ```json
 {
-  "buildCommand": "REACT_APP_API_URL=https://churchos-yitr.onrender.com DISABLE_ESLINT_PLUGIN=true npm run build"
+  "buildCommand": "REACT_APP_API_URL=https://churchos-yitr.onrender.com DISABLE_ESLINT_PLUGIN=true npm run build",
+  "outputDirectory": "build",
+  "framework": "create-react-app"
 }
 ```
 
-### June 8, 2026 (evening) — CORS Blocking All Browser Requests
+### June 8–9, 2026 — CORS Blocking All Browser Requests
 
-Diagnostic test page `api-test.html` confirmed:
+The `api-test.html` diagnostic page confirmed the root cause:
+
 ```
 NETWORK ERROR: Failed to fetch
 CORS is blocking the request.
@@ -185,29 +171,13 @@ Browser Origin: https://churchos-app.vercel.app
 Backend must allow this origin.
 ```
 
-Multiple CORS fixes were written using Python callables:
-```python
-def _allow_origin(origin):
-    if 'vercel.app' in origin: return True
-    return origin in _explicit
-CORS(app, resources={r"/api/*": {"origins": _allow_origin}})
-```
+Multiple fixes using Python callables were written, deployed, and confirmed
+Live in Render — but CORS kept blocking. Flask-CORS 3.x does not support
+Python callables as the `origins` parameter. Every callable was silently
+discarded.
 
-These all failed silently. Flask-CORS 3.x does not support Python callables
-as the `origins` parameter. The function was ignored and CORS remained broken.
+### June 9, 2026 09:35–09:47 EAT — Definitive Fix
 
-### June 9, 2026 09:00–09:47 EAT — Root Cause Isolation and Fix
-
-The diagnostic page revealed CORS was still blocking despite multiple backend
-deploys showing as "Live" in Render. Two issues were discovered:
-
-1. Flask-CORS 3.x only accepts `"*"`, a string, or a list as `origins`.
-   Callables are silently discarded.
-
-2. Previous CORS fixes were deployed (Render showed "Live") but the callable
-   approach never worked regardless.
-
-**Definitive fix:**
 ```python
 CORS(app, resources={
     r"/api/*": {
@@ -218,16 +188,18 @@ CORS(app, resources={
 })
 ```
 
-Render deployed commit `78d6104` at 09:35 EAT. Seed logs confirmed:
+Render deployed commit `78d6104` at 09:35 EAT. Logs confirmed:
+
 ```
 [seed] Updated: Migosi Main Altar (id=1)
 [seed] Complete — admin / Admin@2026
 ```
 
 Diagnostic test at 09:47 EAT:
+
 ```
-STATUS: 200 {"app": "ChurchOS", "status": "ok", "version": "2.0.0"}
-✅ LOGIN SUCCESS — User: admin, Role: admin, Token: received ✅
+STATUS: 200  {"app": "ChurchOS", "status": "ok", "version": "2.0.0"}
+LOGIN SUCCESS — User: admin  Role: admin  Token: received
 ```
 
 **Phase 1 live.**
@@ -236,306 +208,149 @@ STATUS: 200 {"app": "ChurchOS", "status": "ok", "version": "2.0.0"}
 
 ## 5. Root Cause Analysis
 
-### RC-1: `zAuthorization` Typo in api.js
+### RC-1: zAuthorization Typo in api.js
 
-**Commit introduced:** `3836bb6` (churches feature)
-**Commit fixed:** `6c44edf`
-**Impact:** Every Vercel build failed at ESLint/compile step. App ran from old
-cached build which had `BASE_URL = '/api'` (wrong fallback).
+**Introduced:** `3836bb6`  **Fixed:** `6c44edf`
 
-**Why it persisted:** The ESLint error message referenced a different line
-(`Finance.js unused vars`) and was the first error printed. The `api.js`
-syntax error was never seen in isolation.
+A stray `z` made the headers object syntactically invalid. ESLint treated it
+as a fatal compile error in every CI build. The Finance.js error was printed
+first, making it appear to be the only blocker. The api.js error was hidden.
 
-**Lesson:** One syntax error in a shared utility file breaks everything
-downstream but the error surface shows the first *other* failure encountered
-during the same build.
-
----
+**Lesson:** One syntax error in a shared utility breaks all downstream builds.
+Review the full ESLint output, not just the first error.
 
 ### RC-2: REACT_APP_API_URL Not Set in Vercel Build
 
-**Root:** Vercel project created without env var. `api.js` fallback was
-`|| '/api'` (relative URL) not `|| 'https://churchos-yitr.onrender.com'`.
+Colab and curl tests always passed because they called Render directly,
+bypassing the browser entirely. This divergence between server tests and
+browser tests masked the issue for days.
 
-**Impact:** All API calls resolved to `https://churchos-app.vercel.app/api/...`
-— Vercel's domain. Vercel returned 404 for every request. Login showed
-"failed" from 404, not a credential error.
-
-**Why not caught earlier:** Server-to-server tests (Colab, curl) bypassed the
-browser entirely and called the backend directly. They always passed. The
-divergence between server tests and browser tests masked this for days.
-
-**Fix:** Build-time injection via `vercel.json` buildCommand. This is more
-reliable than dashboard env vars because it is version-controlled and
-reproducible on any new Vercel project.
-
----
+**Fix:** Version-controlled build-time injection via `vercel.json`
+`buildCommand`. Reproducible on any new Vercel project. The URL is not a
+secret so committing it to the repo is appropriate.
 
 ### RC-3: Flask-CORS 3.x Does Not Support Python Callables
 
-**Impact:** Every CORS fix that used `_allow_origin`, `_cors_check`, or any
-Python function as the `origins` argument was silently ignored.
+Flask-CORS 3.x `origins` accepts: `"*"`, a single string, a list of strings,
+or a regex string starting with `^`. It does not accept Python functions.
+Every callable passed as `origins` was silently discarded.
 
-**Flask-CORS 3.x `origins` accepts:**
-- `"*"` — all origins
-- `"https://example.com"` — single origin string
-- `["https://a.com", "https://b.com"]` — list of strings
-- A regex pattern string starting with `^`
+This was only confirmed by the `api-test.html` diagnostic page — not by any
+server-side log or test. Browser testing is not optional.
 
-**Flask-CORS 3.x does NOT accept:**
-- Python callables (functions, lambdas)
-- Sets
-- Generators
-
-The documentation for older versions implied callable support. It was removed
-or never ported to the `3.x` branch in the version pinned in
-`requirements.txt`.
-
-**Fix:** `origins="*"`. JWT Bearer tokens protect all sensitive routes. The
-only unprotected endpoints are `/api/health`, `/api/auth/login`, and
-`/api/churches/constants` — none of which expose private data.
-
-**Security note:** Using `origins="*"` with `Authorization` header works
-because the browser does not send cookies (no `withCredentials: true` in
-axios). The JWT in the `Authorization` header is the authentication mechanism,
-not the CORS origin check.
-
----
+**Fix:** `origins="*"`. JWT Bearer tokens protect all sensitive routes.
 
 ### RC-4: Render Running Stale Docker Image
 
-**Impact:** Multiple CORS fixes were pushed to GitHub and Render showed
-"Deploy live" in the Events log, but the running container was still the
-June 8 image. New code was not executing.
+Render's Docker build reuses the pip install layer if `requirements.txt`
+is unchanged. Render showed Deploy live while the container ran old code.
 
-**Why:** Docker layer caching. If `requirements.txt` has not changed, Docker
-reuses the `pip install` layer. If the new Python code is in layers that
-Docker considers cached (because no layer input changed), the old image runs.
+**Fix:** Touch `requirements.txt` with `# cache-bust=<timestamp>` on every
+backend deploy. Now standard procedure in this repository.
 
-**Fix:** Touch `requirements.txt` with a `# cache-bust=<timestamp>` comment
-on every backend deploy. This forces Docker to invalidate the pip layer and
-rebuild from scratch, guaranteeing the new code runs.
+### RC-5: _seed() Using Church.query.first()
 
-**Pattern established:**
-```bash
-# In every backend fix cell:
-echo "# cache-bust=$(date +%s)" >> backend/requirements.txt
-git add backend/requirements.txt
-git commit -m "fix: [description] + cache-bust"
-```
+The original single-tenant church record from CMDMS was already in Neon.
+`Church.query.first()` returned it and `_seed()` skipped creating the pilot
+church. The Churches page showed zero registered churches.
 
----
-
-### RC-5: `_seed()` Using `Church.query.first()`
-
-**Impact:** The MRH church (from the original CMDMS deployment, `id=1`) was
-already in the Neon database. `Church.query.first()` returned it. `_seed()`
-saw a church existed and skipped creating Migosi Main Altar. The Churches page
-showed 0 registered churches.
-
-**Fix:** Filter by name:
-```python
-church = Church.query.filter_by(name='Migosi Main Altar').first()
-if not church:
-    church = Church(name='Migosi Main Altar', ...)
-    db.session.add(church)
-else:
-    church.is_active = True
-    church.denomination = 'Ministry of Repentance and Holiness'
-```
-
-**Additional fix:** Admin user was also queried by `role='admin'` in some
-versions. Changed to `filter_by(username='admin')` for precision. Password
-is always reset on startup: `admin.set_password('Admin@2026')`.
-
----
+**Fix:** Filter by name. Always update existing record. Always reset admin
+password on startup. _seed() is idempotent.
 
 ### RC-6: PWA Service Worker Caching Old JS Bundle
 
-**Impact:** Even after Vercel deployed the fixed `api.js`, the browser served
-the old cached bundle via the service worker. Old bundle had
-`BASE_URL = '/api'` (wrong URL). Login appeared to work from the login page
-but every API call silently failed.
+CRA cached the JavaScript bundle aggressively. After Vercel deployed fixed
+code, browsers served the old bundle from the service worker cache.
 
-**Evidence:** `church-os-three.vercel.app` worked (no cached SW). Main URL
-`churchos-app.vercel.app` failed (old SW cached).
+`church-os-three.vercel.app` worked because no old service worker was cached
+there. The main URL failed because the old SW had been installed for days.
 
-**Fix:** Changed `src/index.js` from `register()` to `unregister()`. Service
-worker is now disabled entirely for Phase 1. PWA caching can be re-enabled in
-Phase 2 after proper cache versioning strategy is in place.
+**Fix:** `serviceWorkerRegistration.unregister()` in `src/index.js`.
+Service worker disabled for Phase 1.
 
 ---
 
 ## 6. Fix History
 
-Every commit that changed behaviour, in order:
-
 | Commit | Description | Files Changed |
 |---|---|---|
 | `6c44edf` | Rewrite api.js — fix zAuthorization syntax error | `frontend/src/api.js` |
-| `53e53aa` | Hardcode backend URL fallback in api.js | `frontend/src/api.js` |
-| `62dad80` | DISABLE_ESLINT_PLUGIN + Finance.js eslint-disable | `frontend/` |
+| `53e53aa` | Hardcode backend URL fallback | `frontend/src/api.js` |
+| `62dad80` | DISABLE_ESLINT_PLUGIN + eslint-disable all pages | `frontend/` |
 | `4a35d39` | CORS multi-origin + admin password always synced | `backend/app.py` |
-| `341240c` | Final seed — Migosi Main Altar by name | `backend/app.py` |
+| `341240c` | Final seed — pilot church filter by name | `backend/app.py` |
 | `808fa22` | README complete rewrite v2.0.0 | `README.md` |
-| `9bdefd2` | Ministry of Repentance and Holiness in denominations | `backend/models.py`, `frontend/src/constants.js` |
+| `9bdefd2` | Denominations list + frontend constants | `backend/models.py` |
 | `5c3edd3` | Bake API URL into vercel.json buildCommand | `frontend/vercel.json` |
 | `57ff81e` | Disable service worker + clear caches | `frontend/src/` |
-| `a5da357` | Add API diagnostic test page | `frontend/public/api-test.html` |
-| `2af99ee` | Hardcode CORS origins list (partial fix) | `backend/app.py` |
-| `78d6104` | **CORS origins="*" — definitive fix** | `backend/app.py`, `backend/requirements.txt` |
+| `a5da357` | Add api-test.html diagnostic page | `frontend/public/` |
+| `2af99ee` | Hardcode CORS origins list (callable — did not work) | `backend/app.py` |
+| `78d6104` | **CORS origins=* — definitive fix** | `backend/app.py` |
 
 ---
 
 ## 7. Key Technical Decisions
 
-### Why `origins="*"` and Not a Restricted List
+### Why origins=* and Not a Restricted List
 
-Flask-CORS 3.x callable support was unreliable. A list approach requires
-updating the list every time a new Vercel preview URL is created. `"*"` is
-simple, auditable, and safe because:
-
-1. All writes require a valid JWT token
-2. JWT tokens are signed with `JWT_SECRET_KEY` stored only in Render env
-3. The login rate limiter (5 req/min/IP) prevents brute-force
-4. No cookies are involved — `withCredentials: false` in axios
-
-Tighten to specific origins in Phase 2 when preview deployments stabilise.
+Flask-CORS 3.x callable support is unreliable. A list requires updating
+every time a new Vercel preview URL is created. Using `*` is simple,
+auditable, and safe because all writes require a valid JWT. Tighten to
+specific origins in Phase 2.
 
 ### Why Docker Cache-Busting via requirements.txt
 
-Render's free tier builds Docker images on every push. If `requirements.txt`
-is unchanged, the pip install layer is cached and the entire Python dependency
-tree is reused. This is correct behaviour for dependencies but means that
-changes to `.py` files that appear after the pip layer may not force a rebuild
-of the relevant layers. Touching `requirements.txt` invalidates the cache at
-the right layer.
+Touching `requirements.txt` invalidates the pip layer and guarantees the
+new code runs. This is now standard procedure on every backend change.
 
 ### Why NullPool for Neon
 
-Neon PostgreSQL is a serverless database. It terminates idle connections after
-a short timeout. SQLAlchemy's default connection pool (QueuePool) maintains
-persistent connections that Neon closes from its side, causing
-`psycopg2.OperationalError: SSL connection has been closed unexpectedly`.
-
-`NullPool` creates a fresh connection for every request and closes it
-immediately after. This is slightly slower per request but eliminates all
-connection pool state issues on serverless infrastructure.
-
-```python
-# config.py
-from sqlalchemy.pool import NullPool
-SQLALCHEMY_ENGINE_OPTIONS = {"poolclass": NullPool}
-```
+Neon terminates idle connections. SQLAlchemy's QueuePool maintains persistent
+connections that Neon closes from its side, causing SSL errors. NullPool
+creates a fresh connection per request — no pool state, no connection drops.
 
 ### Why REACT_APP_API_URL in buildCommand, Not Dashboard
 
-Vercel dashboard environment variables are project-specific and not
-version-controlled. If a new Vercel project is created (which happened three
-times during this deployment), the env var must be re-entered manually.
-
-Placing `REACT_APP_API_URL` in `frontend/vercel.json` `buildCommand` means:
-- It is version-controlled in GitHub
-- Any new Vercel project connected to this repo will automatically have it
-- It is visible in code review
-- It cannot be accidentally deleted from a dashboard
-
-The URL is not a secret (it is the public Render service URL), so committing
-it to the repo is appropriate.
+Dashboard env vars are not version-controlled. Placing the URL in
+`vercel.json` buildCommand means it is committed to the repo and
+automatically present on any new Vercel project.
 
 ### Why _seed() Runs on Every Startup
 
-`_seed()` is idempotent. It uses `filter_by(name='Migosi Main Altar')` and
-updates existing records rather than failing on duplicates. Running on every
-startup guarantees:
-
-- Migosi Main Altar always exists with correct denomination/county
-- Admin password is always correct (`Admin@2026`)
-- Admin `church_id` always points to Migosi Main Altar
-- No manual database intervention needed after deploys
-
-The startup cost is two queries and one commit — negligible.
+Idempotent design: filter by name, update existing, always reset password.
+Guarantees correct state after every deploy without manual DB intervention.
 
 ---
 
 ## 8. Lessons Learned
 
-### 1. Browser Tests Are Not Optional
+**1. Browser tests are not optional.**
+Every server-side test passed throughout this incident. A browser test on
+Day 1 would have revealed CORS and URL issues immediately. After every
+backend change, test from a browser in incognito mode.
 
-Every server-side test passed throughout this incident. Colab cells calling
-the API directly always returned 200. This masked all six root causes. A
-browser test on Day 1 would have revealed the CORS and URL issues immediately.
+**2. Flask-CORS version must be pinned and understood.**
+The callable `origins` pattern is not supported in Flask-CORS 3.x.
+Document which formats your version accepts. Test CORS from the browser.
 
-**Rule going forward:** After every backend change, test from a browser in
-incognito mode. Not from Colab. Not from curl. From a browser.
+**3. Docker cache is invisible without explicit busting.**
+Render can show Deploy live while running old code.
+Touch `requirements.txt` on every backend change.
 
-### 2. Flask-CORS Version Must Be Pinned and Understood
+**4. Multiple Vercel projects for one repo creates confusion.**
+Three projects existed simultaneously. Maintain one per repo per environment.
+Delete unused projects immediately.
 
-Flask-CORS has significant API differences between versions. The callable
-`origins` pattern is not universally supported. Always test CORS in the actual
-browser, not just from tools that don't enforce same-origin policy.
+**5. Service workers require a cache invalidation strategy.**
+CRA caches build artifacts aggressively. Disable before production
+deployment until proper cache versioning is in place.
 
-**Rule:** Pin `Flask-Cors==3.0.10` or upgrade to `4.x` with known callable
-support. Document which version is in use and what its `origins` parameter
-accepts.
-
-### 3. Docker Cache Is Invisible Without Explicit Busting
-
-Render showed "Deploy live" for commits that did not actually deploy new
-Python code. The running container was from an earlier image. Without
-explicitly invalidating the Docker layer cache, there is no guarantee that
-a "live" deployment reflects the latest commit.
-
-**Rule:** Every backend change must include a `requirements.txt` touch. This
-is now standard procedure for this repository.
-
-### 4. Multiple Vercel Projects for the Same Repo Creates Confusion
-
-Three Vercel projects existed simultaneously:
-- `churchos-app.vercel.app` (jmskoero-6422 account, missing env var)
-- `church-os-three.vercel.app` (james-koero account, env var set)
-- `churchos.vercel.app` (South African churches — completely different app)
-
-This caused days of confusion. `church-os-three.vercel.app` worked while
-`churchos-app.vercel.app` didn't, making it appear the latest commits were
-not deploying.
-
-**Rule:** One Vercel project per repo per environment. Delete unused projects
-immediately. The homepage URL in the GitHub repo must always be verified.
-
-### 5. Service Workers Require a Cache Invalidation Strategy
-
-CRA's default service worker caches build artifacts aggressively. Without a
-versioning strategy, users may run outdated JavaScript indefinitely. This is
-particularly dangerous when API URLs or authentication logic changes.
-
-**Rule:** For Phase 1, service worker is disabled. For Phase 2, implement
-cache versioning with automatic update detection before re-enabling PWA.
-
-### 6. `db.create_all()` Does Not Migrate Existing Tables
-
-`db.create_all()` only creates tables that do not exist. It does not add new
-columns to existing tables. The `church` table from the original CMDMS had a
-different schema. New columns (`county`, `denomination`, etc.) were not added
-automatically.
-
-**Rule:** Use Flask-Migrate (`flask db migrate && flask db upgrade`) for all
-schema changes. Do not rely on `create_all()` for production databases.
+**6. db.create_all() does not migrate existing tables.**
+Use Flask-Migrate for all schema changes on production databases.
 
 ---
 
 ## 9. Production Runbook
-
-### Credentials
-
-| Service | URL | Credentials |
-|---|---|---|
-| ChurchOS App | https://churchos-app.vercel.app | — |
-| Admin Login | /login | admin / Admin@2026 |
-| Render | https://dashboard.render.com | James Koero account |
-| Vercel | https://vercel.com/james-koero | james-koero account |
-| Neon | https://console.neon.tech | James Koero account |
 
 ### Health Checks
 
@@ -544,47 +359,45 @@ schema changes. Do not rely on `create_all()` for production databases.
 curl https://churchos-yitr.onrender.com/api/health
 # Expected: {"app":"ChurchOS","status":"ok","version":"2.0.0"}
 
-# Frontend
-# Open https://churchos-app.vercel.app — should load login page
-
-# API test page (browser)
+# Browser diagnostic
 # https://churchos-app.vercel.app/api-test.html
-# Both buttons should return green ✅
+# Both buttons should return green
 ```
 
 ### Deploying a Backend Change
 
-1. Make changes to `backend/`
-2. Add cache-bust to `requirements.txt`:
-   ```bash
-   echo "# cache-bust=$(date +%s)" >> backend/requirements.txt
-   ```
-3. Commit and push to `main`
-4. Watch Render Events: `dashboard.render.com` → ChurchOS → Events
-5. Wait for `==> Your service is live 🎉`
-6. Test: `https://churchos-app.vercel.app/api-test.html`
+```bash
+# 1. Edit files in backend/
+# 2. echo "# cache-bust=$(date +%s)" >> backend/requirements.txt
+# 3. git add -A && git commit -m 'fix: description'
+# 4. git push origin main
+# 5. Render Events -> wait for 'Your service is live'
+# 6. Test: https://churchos-app.vercel.app/api-test.html
+```
 
 ### Deploying a Frontend Change
 
-1. Make changes to `frontend/`
-2. Commit and push to `main`
-3. Watch Vercel dashboard: `vercel.com/james-koero`
-4. Wait for Status: Ready (green)
-5. Test in browser incognito window
+```bash
+# 1. Edit files in frontend/
+# 2. git add -A && git commit -m 'feat: description'
+# 3. git push origin main
+# 4. Vercel dashboard -> wait for Status: Ready
+# 5. Test in Chrome incognito window
+```
 
-### Environment Variables Required
+### Required Environment Variables
 
-**Render (backend):**
-| Variable | Value |
+**Render (set in dashboard):**
+
+| Variable | Description |
 |---|---|
 | `DATABASE_URL` | Neon pooled connection string |
-| `SECRET_KEY` | Random string (auto-generated) |
-| `JWT_SECRET_KEY` | Random string (auto-generated, different from SECRET_KEY) |
+| `SECRET_KEY` | Flask session signing key |
+| `JWT_SECRET_KEY` | JWT signing key (different from SECRET_KEY) |
 | `FRONTEND_URL` | https://churchos-app.vercel.app |
-| `MPESA_CONSUMER_KEY` | (Daraja — not yet configured) |
-| `MPESA_CONSUMER_SECRET` | (Daraja — not yet configured) |
 
-**Vercel (frontend — set in buildCommand, not dashboard):**
+**Vercel (in `frontend/vercel.json` — already committed):**
+
 ```json
 {
   "buildCommand": "REACT_APP_API_URL=https://churchos-yitr.onrender.com DISABLE_ESLINT_PLUGIN=true npm run build"
@@ -593,28 +406,13 @@ curl https://churchos-yitr.onrender.com/api/health
 
 ### If Login Fails
 
-1. Check backend health: `https://churchos-yitr.onrender.com/api/health`
-2. If 500 → check Render logs for Python traceback
-3. If 404 → backend is sleeping, wait 50 seconds and retry
-4. If health OK → test from API page: `https://churchos-app.vercel.app/api-test.html`
-5. If CORS error → check `backend/app.py` CORS config, ensure `origins="*"`
-6. If login fails but CORS OK → run seed fix from Colab
-
-### Emergency: Reset Admin Password
-
-From Render Shell (if available) or Colab:
-```python
-import urllib.request, json
-resp = urllib.request.urlopen(
-    urllib.request.Request(
-        "https://churchos-yitr.onrender.com/api/auth/login",
-        data=json.dumps({"username":"admin","password":"Admin@2026"}).encode(),
-        headers={"Content-Type":"application/json"},
-        method="POST"
-    )
-)
-print(json.loads(resp.read()))
-```
+1. Open `https://churchos-yitr.onrender.com/api/health`
+   - 500 -> check Render logs for Python traceback
+   - 404 -> backend sleeping, wait 50 seconds and retry
+2. Open `https://churchos-app.vercel.app/api-test.html`
+   - CORS error -> verify `backend/app.py` has `origins='*'`
+   - Login fails -> check Render logs for seed completion
+3. Try from incognito window — if incognito works, clear Chrome cache
 
 ---
 
@@ -622,94 +420,39 @@ print(json.loads(resp.read()))
 
 ### Phase 2 (v2.1.0)
 - SMS notifications via Africa's Talking API
-- PDF financial reports (monthly, annual) using ReportLab
-- Email password reset flow
-- M-Pesa Daraja live integration (credentials required)
+- PDF financial reports (monthly, annual)
+- Email password reset
+- M-Pesa Daraja live integration
 - Flask-Migrate for all future schema changes
 
 ### Phase 3 (v3.0.0)
 - Branch-level sub-accounts for multi-campus churches
-- Cross-branch reporting for Overseers and Bishops
+- Cross-branch reporting for overseers
 - React Native mobile app
 - Re-enable PWA service worker with proper versioning
 
-### Technical Debt to Address
-- Tighten CORS from `"*"` to specific Vercel domains once
-  preview URL pattern stabilises
-- Add E2E browser tests (Playwright) to CI pipeline
-- Move from `db.create_all()` to Flask-Migrate fully
-- Add Sentry error tracking to both frontend and backend
+### Technical Debt
+- Tighten CORS from `*` to specific Vercel domains
+- Add Playwright E2E browser tests to CI pipeline
+- Migrate fully from `db.create_all()` to Flask-Migrate
+- Add error tracking (Sentry)
 
 ---
 
-## Appendix A: Repository Structure
+## Appendix: The api-test.html Diagnostic Page
 
-```
-ChurchOS/
-├── backend/
-│   ├── app.py              # create_app(), _seed(), serve()
-│   ├── config.py           # ProductionConfig, DevelopmentConfig
-│   ├── models.py           # SQLAlchemy models + KENYAN_COUNTIES etc.
-│   ├── wsgi.py             # Gunicorn entry point
-│   ├── requirements.txt    # Python deps (touch to bust Docker cache)
-│   └── routes/
-│       ├── auth.py         # POST /api/auth/login, /refresh, /logout
-│       ├── members.py      # CRUD + stats
-│       ├── attendance.py   # Record + service types
-│       ├── finance.py      # Ledger + M-Pesa STK
-│       ├── events.py       # CRUD + upcoming
-│       ├── users.py        # CRUD + roles
-│       ├── dashboard.py    # Aggregate KPIs
-│       └── churches.py     # CRUD + /constants (public)
-├── frontend/
-│   ├── vercel.json         # buildCommand with REACT_APP_API_URL
-│   ├── package.json
-│   ├── public/
-│   │   ├── index.html      # no-cache meta tags
-│   │   ├── manifest.json   # PWA manifest (ChurchOS branding)
-│   │   └── api-test.html   # Diagnostic page
-│   └── src/
-│       ├── index.js        # serviceWorkerRegistration.unregister()
-│       ├── api.js          # axios instance + all API modules
-│       ├── contexts/
-│       │   └── AuthContext.js
-│       ├── pages/
-│       │   ├── Dashboard.js
-│       │   ├── Members.js
-│       │   ├── Attendance.js
-│       │   ├── Finance.js
-│       │   ├── Events.js
-│       │   ├── Churches.js
-│       │   ├── Users.js
-│       │   ├── Login.js
-│       │   └── Profile.js
-│       └── constants.js    # 47 counties, 18 denominations
-├── .github/
-│   └── workflows/
-│       └── ci.yml          # GitHub Actions CI
-├── render.yaml             # Render blueprint (autoDeploy: true)
-├── Dockerfile              # Python 3.11-slim, gunicorn
-└── README.md               # Full technical documentation
-```
-
----
-
-## Appendix B: The api-test.html Diagnostic Page
-
-The most important debugging tool added during this incident is
-`frontend/public/api-test.html`. It is a plain HTML page (no React, no
-service worker, no bundler) that makes direct fetch calls to the backend and
-shows the exact error.
+The most valuable debugging tool added during this incident is
+`frontend/public/api-test.html` — a plain HTML page with no React, no
+service worker, and no bundler. It makes direct fetch calls to the backend
+and shows the exact browser error.
 
 Access at: `https://churchos-app.vercel.app/api-test.html`
 
-It was this page that definitively confirmed CORS was the root cause by
-showing the browser's actual Origin header and the blocked request.
-
-Keep this page in the repository. It costs nothing and is invaluable for
-diagnosing any future deployment issues in under 30 seconds.
+This page confirmed CORS as the root cause by showing the browser's actual
+Origin header and the blocked request — something no server-side tool could
+reveal. Keep this page in the repository.
 
 ---
 
-*Built by James Koero · ML Engineer · Kisumu, Kenya · 2026*
-*This document is part of the ChurchOS repository at github.com/jameskoero/ChurchOS*
+*Built by James Koero · ML Engineer · Kisumu, Kenya · 2026*  
+*github.com/jameskoero/ChurchOS*
