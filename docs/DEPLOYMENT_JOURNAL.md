@@ -192,7 +192,7 @@ Render deployed commit `78d6104` at 09:35 EAT. Logs confirmed:
 
 ```
 [seed] Updated: Migosi Main Altar (id=1)
-[seed] Complete — admin / Admin@2026
+[seed] Complete — admin / [removed]
 ```
 
 Diagnostic test at 09:47 EAT:

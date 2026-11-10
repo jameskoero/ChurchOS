@@ -13,4 +13,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Syntax check
-        run: python -m compileall backend
+        run: python -m compileall -q backend
+      - name: Install
+        run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+      - name: Tests
+        run: python -m pytest backend/tests -q

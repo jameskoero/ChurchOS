@@ -182,6 +182,9 @@ class User(db.Model):
     is_active     = db.Column(db.Boolean, default=True)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
     last_login    = db.Column(db.DateTime)
+    failed_logins = db.Column(db.Integer, default=0)
+    locked_until  = db.Column(db.DateTime)
+    token_version = db.Column(db.Integer, default=0)
 
     def set_password(self, p):
         self.password_hash = bcrypt.generate_password_hash(p).decode('utf-8')
@@ -372,3 +375,13 @@ class Event(db.Model):
             'max_attendees': self.max_attendees, 'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+class TokenBlocklist(db.Model):
+    """Revoked JWTs. A token whose jti is listed here is rejected."""
+    __tablename__ = 'token_blocklist'
+    id         = db.Column(db.Integer, primary_key=True)
+    jti        = db.Column(db.String(36), unique=True, nullable=False, index=True)
+    token_type = db.Column(db.String(10), nullable=False)
+    user_id    = db.Column(db.Integer, index=True)
+    revoked_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = db.Column(db.DateTime)

@@ -199,7 +199,7 @@ echo "REACT_APP_API_URL=http://localhost:5000" > .env.local
 npm start
 ```
 
-Default credentials (dev only): `admin` / `Admin@2026`
+First admin: set `ADMIN_BOOTSTRAP_PASSWORD` (12+ characters) before the first start. The admin is created once; the app never resets a password.
 
 ---
 
@@ -234,14 +234,14 @@ Import repo → Root Directory: `frontend` → set `REACT_APP_API_URL` → auto-
 
 ## 12. Security
 
-- Login rate-limited: 5 requests/min per IP
+- Login rate-limited (10 requests/min per address) and locked for 15 minutes after 5 failed attempts
 - JWT blocklist — logout actually revokes tokens
 - Refresh token rotation — stolen tokens expire after one use
 - CORS supports comma-separated FRONTEND_URL (multi-origin)
-- Multi-tenant isolation — church_id on every ORM query
-- Webhook HMAC signature verification (M-Pesa + Flutterwave)
+- Multi-tenant isolation: NOT yet enforced in the API (planned)
+- Payment webhooks: not yet implemented
 - Passwords: Flask-Bcrypt (cost factor 12)
-- Admin password synced on every startup via _seed()
+- First admin created once from ADMIN_BOOTSTRAP_PASSWORD; startup never resets a password
 
 ---
 
@@ -258,7 +258,7 @@ Import repo → Root Directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - [x] Churches page — county, sub-county, denomination, size, paybill fields
 - [x] Migosi Main Altar seeded (Kisumu, Ministry of Repentance and Holiness)
 - [x] Multi-origin CORS support
-- [x] Admin password always synced on startup
+- [x] Admin created once from an environment variable (v2.1.0)
 
 ### v2.1.0
 - [ ] SMS via Africa's Talking API

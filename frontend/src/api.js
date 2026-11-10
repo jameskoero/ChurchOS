@@ -15,31 +15,56 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+function endSession() {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+  if (window.location.pathname !== '/login') window.location.href = '/login';
+}
+
+// One refresh at a time. The server rotates refresh tokens, so two
+// refresh calls in parallel would end the session.
+let refreshing = null;
+
+function refreshTokens() {
+  if (!refreshing) {
+    const used = localStorage.getItem('refresh_token');
+    if (!used) return Promise.reject(new Error('no refresh token'));
+    refreshing = axios.post(
+      `${BASE_URL}/api/auth/refresh`, {},
+      { headers: { Authorization: `Bearer ${used}` }, timeout: 15000 }
+    ).then(res => {
+      localStorage.setItem('access_token', res.data.access_token);
+      if (res.data.refresh_token) {
+        localStorage.setItem('refresh_token', res.data.refresh_token);
+      }
+      return res.data.access_token;
+    }).catch(err => {
+      // Another tab may already have rotated the token.
+      const current = localStorage.getItem('refresh_token');
+      const access = localStorage.getItem('access_token');
+      if (current && current !== used && access) return access;
+      throw err;
+    }).finally(() => { refreshing = null; });
+  }
+  return refreshing;
+}
+
 api.interceptors.response.use(
   res => res,
   async error => {
-    const orig = error.config;
-    if (error.response?.status === 401 && !orig._retry
-        && orig.url !== '/auth/login') {
+    const orig = error.config || {};
+    const url = orig.url || '';
+    const isAuthCall = url.includes('/api/auth/login')
+      || url.includes('/api/auth/refresh');
+    if (error.response?.status === 401 && !orig._retry && !isAuthCall) {
       orig._retry = true;
-      const rt = localStorage.getItem('refresh_token');
-      if (rt) {
-        try {
-          const res = await axios.post(
-            `${BASE_URL}/api/auth/refresh`, {},
-            { headers: { Authorization: `Bearer ${rt}` } }
-          );
-          const nt = res.data.access_token;
-          localStorage.setItem('access_token', nt);
-          orig.headers.Authorization = `Bearer ${nt}`;
-          return api(orig);
-        } catch {
-          localStorage.clear();
-          window.location.href = '/login';
-        }
-      } else {
-        localStorage.clear();
-        window.location.href = '/login';
+      try {
+        const token = await refreshTokens();
+        orig.headers.Authorization = `Bearer ${token}`;
+        return api(orig);
+      } catch {
+        endSession();
       }
     }
     return Promise.reject(error);
@@ -48,10 +73,24 @@ api.interceptors.response.use(
 
 export const authAPI = {
   login:          d  => api.post('/api/auth/login', d),
-  refresh:        () => api.post('/api/auth/refresh'),
-  logout:         () => api.post('/api/auth/logout'),
+  // Tokens are read now, before the caller clears them.
+  logout:         () => {
+    const access = localStorage.getItem('access_token');
+    const refresh = localStorage.getItem('refresh_token');
+    if (!access) return Promise.resolve();
+    return axios.post(
+      `${BASE_URL}/api/auth/logout`, { refresh_token: refresh },
+      { headers: { Authorization: `Bearer ${access}` }, timeout: 8000 }
+    ).catch(() => {});
+  },
   me:             () => api.get('/api/auth/me'),
-  changePassword: d  => api.post('/api/auth/change-password', d),
+  changePassword: d  => api.post('/api/auth/change-password', d).then(res => {
+    if (res.data && res.data.access_token) {
+      localStorage.setItem('access_token', res.data.access_token);
+      localStorage.setItem('refresh_token', res.data.refresh_token);
+    }
+    return res;
+  }),
 };
 
 export const membersAPI = {
