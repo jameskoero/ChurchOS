@@ -182,6 +182,10 @@ class User(db.Model):
     is_active     = db.Column(db.Boolean, default=True)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
     last_login    = db.Column(db.DateTime)
+    failed_logins = db.Column(db.Integer, default=0)
+    locked_until  = db.Column(db.DateTime)
+    token_version = db.Column(db.Integer, default=0)
+    is_platform_owner = db.Column(db.Boolean, default=False)
 
     def set_password(self, p):
         self.password_hash = bcrypt.generate_password_hash(p).decode('utf-8')
@@ -193,6 +197,7 @@ class User(db.Model):
             'username': getattr(self, 'username', '') or '',
             'email': self.email, 'full_name': self.full_name,
             'role': self.role, 'is_active': self.is_active,
+            'is_platform_owner': bool(self.is_platform_owner),
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None
         }
@@ -230,6 +235,9 @@ class Member(db.Model):
     date_joined       = db.Column(db.Date, default=date.today)
     membership_status = db.Column(db.String(20), default='active')
     notes             = db.Column(db.Text)
+    consent_at        = db.Column(db.DateTime)
+    consent_version   = db.Column(db.String(20))
+    erased_at         = db.Column(db.DateTime)
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at        = db.Column(db.DateTime, default=datetime.utcnow,
                                    onupdate=datetime.utcnow)
@@ -266,15 +274,16 @@ class Member(db.Model):
             'date_joined': self.date_joined.isoformat() if self.date_joined else None,
             'membership_status': self.membership_status,
             'notes': self.notes,
+            'consent_at': self.consent_at.isoformat() if self.consent_at else None,
+            'consent_version': self.consent_version,
+            'erased': self.erased_at is not None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
         if include_stats:
             data['total_attendance'] = self.attendance_records.count()
-            data['total_giving'] = sum(
-                f.amount for f in self.finance_records.filter_by(transaction_type='tithe')
-            ) + sum(
-                f.amount for f in self.finance_records.filter_by(transaction_type='offering')
-            )
+            data['total_giving'] = float(sum(
+                f.amount for f in self.finance_records
+                if f.transaction_type in ('tithe', 'offering') and f.status != 'void'))
         return data
 
 
@@ -317,6 +326,12 @@ class Finance(db.Model):
     transaction_date = db.Column(db.Date, nullable=False)
     recorded_by      = db.Column(db.Integer, db.ForeignKey('users.id'))
     verified         = db.Column(db.Boolean, default=False)
+    verified_by      = db.Column(db.Integer)
+    verified_at      = db.Column(db.DateTime)
+    status           = db.Column(db.String(10), default='posted')
+    voided_by        = db.Column(db.Integer)
+    voided_at        = db.Column(db.DateTime)
+    void_reason      = db.Column(db.Text)
     notes            = db.Column(db.Text)
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at       = db.Column(db.DateTime, default=datetime.utcnow,
@@ -337,7 +352,10 @@ class Finance(db.Model):
             'member_name': self.member.full_name if self.member else None,
             'payment_method': self.payment_method, 'mpesa_ref': self.mpesa_ref,
             'transaction_date': self.transaction_date.isoformat() if self.transaction_date else None,
-            'verified': self.verified, 'notes': self.notes,
+            'verified': bool(self.verified), 'notes': self.notes,
+            'status': self.status or 'posted',
+            'recorded_by': self.recorded_by, 'verified_by': self.verified_by,
+            'void_reason': self.void_reason,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -370,5 +388,106 @@ class Event(db.Model):
             'is_recurring': self.is_recurring,
             'recurrence_pattern': self.recurrence_pattern,
             'max_attendees': self.max_attendees, 'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+class TokenBlocklist(db.Model):
+    """Revoked JWTs. A token whose jti is listed here is rejected."""
+    __tablename__ = 'token_blocklist'
+    id         = db.Column(db.Integer, primary_key=True)
+    jti        = db.Column(db.String(36), unique=True, nullable=False, index=True)
+    token_type = db.Column(db.String(10), nullable=False)
+    user_id    = db.Column(db.Integer, index=True)
+    revoked_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = db.Column(db.DateTime)
+
+
+class AuditLog(db.Model):
+    """Append-only record of who changed what. Rows are never edited or deleted."""
+    __tablename__ = 'audit_log'
+    id         = db.Column(db.Integer, primary_key=True)
+    church_id  = db.Column(db.Integer, index=True)
+    user_id    = db.Column(db.Integer, index=True)
+    action     = db.Column(db.String(40), nullable=False)
+    entity     = db.Column(db.String(40), nullable=False)
+    entity_id  = db.Column(db.Integer, index=True)
+    before     = db.Column('before_json', db.Text)
+    after      = db.Column('after_json', db.Text)
+    ip         = db.Column(db.String(64))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        import json
+        return {
+            'id': self.id, 'user_id': self.user_id, 'action': self.action,
+            'entity': self.entity, 'entity_id': self.entity_id,
+            'before': json.loads(self.before) if self.before else None,
+            'after': json.loads(self.after) if self.after else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+from sqlalchemy import event as _sa_event  # noqa: E402
+
+
+@_sa_event.listens_for(AuditLog, 'before_update')
+@_sa_event.listens_for(AuditLog, 'before_delete')
+def _audit_is_append_only(mapper, connection, target):
+    raise RuntimeError('audit_log is append-only')
+
+
+class PaymentRequest(db.Model):
+    """A payment prompt a member was asked to confirm on their phone."""
+    __tablename__ = 'payment_requests'
+    id                  = db.Column(db.Integer, primary_key=True)
+    church_id           = db.Column(db.Integer, db.ForeignKey('churches.id'), index=True, nullable=False)
+    member_id           = db.Column(db.Integer, db.ForeignKey('members.id'))
+    phone_masked        = db.Column(db.String(20))
+    amount              = db.Column(db.Numeric(12, 2), nullable=False)
+    transaction_type    = db.Column(db.String(20), default='tithe')
+    status              = db.Column(db.String(12), default='pending', index=True)
+    checkout_request_id = db.Column(db.String(80), unique=True, index=True)
+    merchant_request_id = db.Column(db.String(80))
+    mpesa_receipt       = db.Column(db.String(30))
+    result_code         = db.Column(db.String(10))
+    result_desc         = db.Column(db.String(255))
+    finance_id          = db.Column(db.Integer)
+    requested_by        = db.Column(db.Integer)
+    created_at          = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    completed_at        = db.Column(db.DateTime)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'member_id': self.member_id, 'phone': self.phone_masked,
+            'amount': float(self.amount), 'transaction_type': self.transaction_type,
+            'status': self.status, 'mpesa_receipt': self.mpesa_receipt,
+            'result_desc': self.result_desc, 'finance_id': self.finance_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class PaymentEvent(db.Model):
+    """A Paybill payment someone made without being asked (inbox item)."""
+    __tablename__ = 'payment_events'
+    id         = db.Column(db.Integer, primary_key=True)
+    church_id  = db.Column(db.Integer, db.ForeignKey('churches.id'), index=True, nullable=False)
+    trans_id   = db.Column(db.String(30), unique=True, nullable=False, index=True)
+    amount     = db.Column(db.Numeric(12, 2), nullable=False)
+    msisdn     = db.Column(db.String(64))
+    payer_name = db.Column(db.String(120))
+    bill_ref   = db.Column(db.String(60))
+    trans_time = db.Column(db.String(20))
+    status     = db.Column(db.String(12), default='unmatched', index=True)
+    member_id  = db.Column(db.Integer)
+    finance_id = db.Column(db.Integer)
+    note       = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'trans_id': self.trans_id, 'amount': float(self.amount),
+            'payer_name': self.payer_name, 'bill_ref': self.bill_ref,
+            'trans_time': self.trans_time, 'status': self.status,
+            'member_id': self.member_id, 'finance_id': self.finance_id, 'note': self.note,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }

@@ -31,9 +31,9 @@ class Config:
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(
-        hours=8)
+        minutes=15)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(
-        days=30)
+        days=7)
     JWT_BLOCKLIST_ENABLED = True
     JWT_BLOCKLIST_TOKEN_CHECKS = [
         "access", "refresh"]

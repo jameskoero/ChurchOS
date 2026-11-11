@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from tenancy import (current_church_id, scoped, owned_or_404, tquery,
+                     page_size, roles_required, can_see_money, FINANCE_READ)
 from models import db, Event
 from datetime import datetime
 
@@ -10,11 +12,11 @@ events_bp = Blueprint('events', __name__)
 @jwt_required()
 def get_events():
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = page_size(20)
     status = request.args.get('status', '')
     event_type = request.args.get('event_type', '')
 
-    query = Event.query
+    query = scoped(Event)
     if status:
         query = query.filter_by(status=status)
     if event_type:
@@ -37,7 +39,7 @@ def get_events():
 @jwt_required()
 def get_upcoming():
     today = datetime.utcnow()
-    events = Event.query.filter(
+    events = scoped(Event).filter(
         Event.start_date >= today,
         Event.status != 'cancelled'
     ).order_by(Event.start_date).limit(10).all()
@@ -47,7 +49,7 @@ def get_upcoming():
 @events_bp.route('/<int:event_id>', methods=['GET'])
 @jwt_required()
 def get_event(event_id):
-    event = Event.query.get_or_404(event_id)
+    event = owned_or_404(Event, event_id)
     return jsonify(event.to_dict()), 200
 
 
@@ -79,6 +81,7 @@ def create_event():
             pass
 
     event = Event(
+        church_id=current_church_id(),
         title=data['title'],
         description=data.get('description'),
         event_type=data.get('event_type', 'service'),
@@ -104,7 +107,7 @@ def update_event(event_id):
     if claims.get('role') not in ['admin', 'pastor', 'secretary']:
         return jsonify({'error': 'Insufficient permissions'}), 403
 
-    event = Event.query.get_or_404(event_id)
+    event = owned_or_404(Event, event_id)
     data = request.get_json()
 
     fields = ['title', 'description', 'event_type', 'location', 'is_recurring',
@@ -134,7 +137,7 @@ def delete_event(event_id):
     claims = get_jwt()
     if claims.get('role') not in ['admin', 'pastor']:
         return jsonify({'error': 'Insufficient permissions'}), 403
-    event = Event.query.get_or_404(event_id)
+    event = owned_or_404(Event, event_id)
     db.session.delete(event)
     db.session.commit()
     return jsonify({'message': 'Event deleted'}), 200

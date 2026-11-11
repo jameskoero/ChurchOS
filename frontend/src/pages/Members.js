@@ -11,7 +11,8 @@ const EMPTY_FORM = {
   first_name: '', last_name: '', email: '', phone: '', gender: '',
   date_of_birth: '', address: '', occupation: '', marital_status: '',
   next_of_kin: '', next_of_kin_phone: '', cell_group: '',
-  baptism_date: '', date_joined: '', membership_status: 'active', notes: ''
+  baptism_date: '', date_joined: '', membership_status: 'active', notes: '',
+  consent: false
 };
 
 function statusBadge(status) {
@@ -75,7 +76,8 @@ export default function Members() {
       next_of_kin: m.next_of_kin || '', next_of_kin_phone: m.next_of_kin_phone || '',
       cell_group: m.cell_group || '', baptism_date: m.baptism_date || '',
       date_joined: m.date_joined || '', membership_status: m.membership_status || 'active',
-      notes: m.notes || ''
+      notes: m.notes || '',
+      consent: !!m.consent_at
     });
     setError('');
     setShowModal(true);
@@ -300,6 +302,13 @@ export default function Members() {
                   <div className="form-group" style={{ gridColumn: '1/-1' }}>
                     <label className="form-label">Notes</label>
                     <textarea className="form-control" value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} />
+                  </div>
+                  <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                    <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', fontSize: '0.9rem' }}>
+                      <input type="checkbox" checked={!!form.consent} onChange={e => set('consent', e.target.checked)}
+                             style={{ marginTop: 4, width: 18, height: 18 }} />
+                      <span>This member agrees that the church may keep their details, including family and personal information, to care for them and run the church.</span>
+                    </label>
                   </div>
                 </div>
               </div>

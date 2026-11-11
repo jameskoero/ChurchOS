@@ -1,0 +1,2 @@
+# Test-only dependencies (not installed in the production image)
+pytest==8.3.4
