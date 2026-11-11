@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const TODAY = new Date().toISOString().split('T')[0];
 const PAYMENT_METHODS = ['cash', 'mpesa', 'bank', 'cheque'];
-const PIE_COLORS = ['#C9A84C','#0D1B2A','#28A745','#17A2B8','#DC3545','#6C757D','#E2C270','#152234'];
+const PIE_COLORS = ['#FFD84A','#0C1445','#12805C','#17A2B8','#D92D20','#6C757D','#FFE27A','#1A2460'];
 
 const EMPTY_FORM = {
   transaction_type: 'offering', category: '', amount: '',
@@ -148,9 +148,9 @@ export default function Finance() {
       {summary && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
           {[
-            { label: 'Annual Income', value: fmt(summary.total_income), color: '#28a745', icon: '📈' },
-            { label: 'Annual Expenses', value: fmt(summary.total_expense), color: '#dc3545', icon: '📉' },
-            { label: 'Net Balance', value: fmt(summary.net), color: summary.net >= 0 ? '#28a745' : '#dc3545', icon: '💳' },
+            { label: 'Annual Income', value: fmt(summary.total_income), color: '#12805C', icon: '📈' },
+            { label: 'Annual Expenses', value: fmt(summary.total_expense), color: '#D92D20', icon: '📉' },
+            { label: 'Net Balance', value: fmt(summary.net), color: summary.net >= 0 ? '#12805C' : '#D92D20', icon: '💳' },
           ].map(c => (
             <div key={c.label} className="card" style={{ borderTop: `3px solid ${c.color}` }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--gray-600)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', fontWeight: 600 }}>{c.label}</div>

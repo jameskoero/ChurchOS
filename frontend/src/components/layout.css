@@ -1,0 +1,57 @@
+/* ChurchOS app shell: navy menu, yellow active pill, light work area. */
+.ly { display: flex; min-height: 100vh; background: var(--gray-100); font-family: var(--font-body); }
+.ly button { font-family: inherit; }
+
+.ly-side { position: fixed; top: 0; bottom: 0; left: 0; width: 248px; background: #0C1445; color: #C7CDEB;
+  display: flex; flex-direction: column; padding: 22px 14px 16px; z-index: 300; transform: translateX(-100%);
+  transition: transform 0.22s ease; overflow-y: auto; }
+.ly-side.open { transform: translateX(0); }
+.ly-scrim { position: fixed; inset: 0; background: rgba(12, 20, 69, 0.55); border: 0; z-index: 250; cursor: pointer; }
+
+.ly-brand { display: flex; align-items: center; gap: 12px; padding: 0 10px; }
+.ly-mark { width: 38px; height: 38px; border-radius: 12px; background: #FFD84A; display: inline-flex; align-items: center; justify-content: center; }
+.ly-name { font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; color: #FFFFFF; letter-spacing: -0.01em; }
+.ly-church { margin: 22px 10px 14px; display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 14px; background: #1A2460; }
+.ly-eyebrow { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: #8E98C7; font-weight: 700; }
+.ly-church-name { color: #FFFFFF; font-weight: 600; font-size: 0.95rem; line-height: 1.25; }
+
+.ly-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; padding: 4px 0; }
+.ly-link { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 16px; border-radius: 23px;
+  color: #C7CDEB; text-decoration: none; font-weight: 600; font-size: 0.97rem; }
+.ly-link:hover { background: #1A2460; color: #FFFFFF; }
+.ly-link.active { background: #FFD84A; color: #0C1445; font-weight: 700; }
+.ly-link:focus-visible, .ly-out:focus-visible, .ly-me:focus-visible, .ly-burger:focus-visible { outline: 3px solid #FFD84A; outline-offset: 2px; }
+.ly-ico { flex: none; }
+
+.ly-foot { margin-top: 12px; padding: 12px 6px 0; border-top: 1px solid #26306A; display: grid; gap: 10px; }
+.ly-me { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 16px; background: #1A2460; text-decoration: none; }
+.ly-avatar { width: 40px; height: 40px; border-radius: 50%; background: #FFD84A; color: #0C1445; display: inline-flex;
+  align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; flex: none; }
+.ly-me-text { display: flex; flex-direction: column; min-width: 0; }
+.ly-me-name { color: #FFFFFF; font-weight: 700; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ly-me-role { color: #8E98C7; font-size: 0.75rem; text-transform: capitalize; }
+.ly-out { min-height: 44px; border-radius: 22px; border: 2px solid #3A4686; background: transparent; color: #FFFFFF;
+  font-weight: 700; cursor: pointer; font-size: 0.92rem; }
+.ly-out:hover { background: #1A2460; }
+
+.ly-main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
+.ly-top { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 16px;
+  background: #FFFFFF; border-bottom: 1px solid var(--gray-200); }
+.ly-burger { width: 44px; height: 44px; border-radius: 22px; border: 0; background: #F2F4FA; color: #0C1445; display: inline-flex;
+  align-items: center; justify-content: center; cursor: pointer; }
+.ly-top-brand { font-family: var(--font-display); font-weight: 900; font-size: 1.15rem; color: #0C1445; }
+.ly-top-right { margin-left: auto; display: flex; align-items: center; gap: 14px; color: var(--gray-600); font-size: 0.85rem; font-weight: 600; }
+.ly-status { display: inline-flex; align-items: center; gap: 7px; }
+.ly-status i { width: 9px; height: 9px; border-radius: 50%; background: #12805C; display: inline-block; }
+.ly-status.off i { background: #D92D20; }
+.ly-content { flex: 1; width: 100%; max-width: 1320px; margin: 0 auto; padding: 16px; }
+
+@media (min-width: 900px) {
+  .ly-side { transform: none; }
+  .ly-scrim { display: none; }
+  .ly-main { margin-left: 248px; }
+  .ly-burger, .ly-top-brand { display: none; }
+  .ly-top { padding: 0 28px; justify-content: flex-end; }
+  .ly-content { padding: 24px 28px 40px; }
+}
+@media (prefers-reduced-motion: reduce) { .ly-side { transition: none; } }

@@ -1,0 +1,25 @@
+.lg { min-height: 100vh; display: grid; grid-template-columns: 1fr; background: #F2F4FA; font-family: var(--font-body); }
+.lg-hero { position: relative; background: #2339F5; color: #FFFFFF; padding: 28px 22px 70px; }
+.lg-brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; }
+.lg-mark { width: 40px; height: 40px; border-radius: 12px; background: #FFD84A; display: inline-flex; align-items: center; justify-content: center; }
+.lg-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.02em; line-height: 1.04; font-size: clamp(2.3rem, 9vw, 4.4rem); margin: 38px 0 12px; }
+.lg-sub { color: #E6E9FF; font-size: 1.05rem; max-width: 28rem; margin: 0; }
+.lg-card { background: #FFFFFF; border: 1px solid #E1E5F2; border-radius: 26px; margin: -44px 16px 24px; padding: 26px 22px; display: grid; gap: 6px; align-content: start; }
+.lg-h { font-family: var(--font-display); font-weight: 900; font-size: 1.6rem; margin: 0 0 8px; color: #0C1445; }
+.lg-label { font-weight: 700; font-size: 0.85rem; color: #5A6487; margin-top: 8px; }
+.lg-input { width: 100%; min-height: 50px; border-radius: 16px; border: 2px solid #E1E5F2; background: #F2F4FA; padding: 0 16px; font-size: 1rem; color: #0C1445; font-family: inherit; }
+.lg-input:focus { outline: none; border-color: #2339F5; background: #FFFFFF; }
+.lg-pass { position: relative; }
+.lg-show { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); min-height: 38px; padding: 0 14px; border-radius: 19px; border: 0; background: transparent; color: #2339F5; font-weight: 700; cursor: pointer; font-family: inherit; }
+.lg-go { margin-top: 16px; min-height: 52px; border-radius: 26px; border: 0; background: #FFD84A; color: #0C1445; font-weight: 800; font-size: 1.05rem; cursor: pointer; font-family: inherit; }
+.lg-go:hover:not(:disabled) { background: #FFE27A; }
+.lg-go:disabled { opacity: 0.6; cursor: default; }
+.lg-error { background: #FCE4E2; color: #7A1A12; border-radius: 14px; padding: 12px 14px; font-weight: 600; font-size: 0.92rem; }
+.lg-foot { text-align: center; color: #5A6487; font-size: 0.82rem; margin: 14px 0 0; }
+.lg *:focus-visible { outline: 3px solid #FFD84A; outline-offset: 2px; }
+@media (min-width: 900px) {
+  .lg { grid-template-columns: 1.15fr 1fr; align-items: stretch; }
+  .lg-hero { padding: 40px 56px; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; }
+  .lg-hero .lg-brand { position: absolute; top: 40px; left: 56px; }
+  .lg-card { margin: auto; width: min(440px, 90%); padding: 34px 32px; }
+}
