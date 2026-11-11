@@ -23,6 +23,8 @@ PAY_ROLES = ('admin', 'treasurer')
 INCOME_TYPES = [t for t in TRANSACTION_TYPES if t != 'expense']
 MAX_STK = 150000          # M-Pesa single transaction limit, in shillings
 EXPIRE_AFTER = timedelta(minutes=15)
+QUERY_AFTER = timedelta(seconds=20)
+QUERY_EVERY = timedelta(seconds=15)
 ACK = {'ResultCode': 0, 'ResultDesc': 'Accepted'}
 
 
@@ -154,13 +156,48 @@ def list_requests():
 @roles_required(*PAY_ROLES)
 def get_request(request_id):
     pr = owned_or_404(PaymentRequest, request_id)
+    if pr.status == 'pending':
+        _resolve_by_query(pr)
     if pr.status == 'pending' and pr.created_at < datetime.utcnow() - EXPIRE_AFTER:
         pr.status = 'expired'
         db.session.commit()
     return jsonify(pr.to_dict()), 200
 
 
+_last_query = {}
+
+
+def _resolve_by_query(pr):
+    """If Safaricom's callback has not arrived, ask Safaricom for the result directly."""
+    now = datetime.utcnow()
+    if pr.created_at > now - QUERY_AFTER:
+        return
+    last = _last_query.get(pr.id)
+    if last and now - last < QUERY_EVERY:
+        return
+    _last_query[pr.id] = now
+    try:
+        code, desc = mpesa.stk_query(pr.checkout_request_id)
+    except mpesa.MpesaError:
+        return                      # still processing, or Safaricom unreachable: ask again later
+    pr.result_code = code[:10]
+    pr.result_desc = desc[:255]
+    pr.completed_at = now
+    if code == '0':
+        row = _post_money(pr.church_id, pr.member_id, pr.amount, pr.transaction_type,
+                          None, pr.requested_by,
+                          'Recorded from M-Pesa status check (receipt follows if Safaricom sends it)')
+        pr.status = 'paid'
+        pr.finance_id = row.id if row else None
+        audit('payment.paid', 'payment', pr.id, church_id=pr.church_id, user_id=pr.requested_by,
+              after={'source': 'status query', 'amount': str(pr.amount)})
+    else:
+        pr.status = 'cancelled' if code == '1032' else 'failed'
+    db.session.commit()
+
+
 # ── Safaricom calls back ─────────────────────────────────────────────────────
+@payments_bp.route('/stk/callback/<secret>', methods=['POST'])
 @payments_bp.route('/mpesa/callback/<secret>', methods=['POST'])
 @limiter.limit('120 per minute')
 def stk_callback(secret):
@@ -173,6 +210,19 @@ def stk_callback(secret):
     pr = PaymentRequest.query.filter_by(checkout_request_id=checkout).first() if checkout else None
     if pr is None:
         log.warning('callback for an unknown checkout id')
+        return _ack()
+    if pr.status == 'paid' and not pr.mpesa_receipt and str(cb.get('ResultCode')) == '0':
+        # Paid via the status check first; the late callback supplies the receipt.
+        meta = (cb.get('CallbackMetadata') or {}).get('Item') or []
+        items = {i.get('Name'): i.get('Value') for i in meta if isinstance(i, dict)}
+        receipt = str(items.get('MpesaReceiptNumber') or '').strip().upper()[:30]
+        if receipt and money(items.get('Amount')) == pr.amount:
+            pr.mpesa_receipt = receipt
+            if pr.finance_id:
+                row = db.session.get(Finance, pr.finance_id)
+                if row is not None and not row.mpesa_ref:
+                    row.mpesa_ref = receipt
+            db.session.commit()
         return _ack()
     if pr.status != 'pending':
         return _ack()                       # already handled: nothing to do twice
@@ -208,6 +258,7 @@ def stk_callback(secret):
     return _ack()
 
 
+@payments_bp.route('/c2b/<secret>/validation', methods=['POST'])
 @payments_bp.route('/mpesa/c2b/<secret>/validation', methods=['POST'])
 def c2b_validation(secret):
     blocked = _guard(secret)
@@ -232,6 +283,7 @@ def _match_member(church_id, bill_ref):
     return found[0] if len(found) == 1 else None
 
 
+@payments_bp.route('/c2b/<secret>/confirmation', methods=['POST'])
 @payments_bp.route('/mpesa/c2b/<secret>/confirmation', methods=['POST'])
 @limiter.limit('120 per minute')
 def c2b_confirmation(secret):

@@ -37,7 +37,8 @@ def settings():
 
 
 def callback_url(cfg):
-    return '%s/api/payments/mpesa/callback/%s' % (
+    # Safaricom refuses callback addresses containing the word M-Pesa, so this path avoids it.
+    return '%s/api/payments/stk/callback/%s' % (
         cfg['MPESA_CALLBACK_URL'].rstrip('/'), cfg['MPESA_CALLBACK_SECRET'])
 
 
@@ -98,3 +99,24 @@ def stk_push(phone, amount, account_ref, description):
         raise MpesaError('Safaricom did not accept the request')
     return {'merchant_request_id': body.get('MerchantRequestID'),
             'checkout_request_id': body['CheckoutRequestID']}
+
+
+def stk_query(checkout_request_id):
+    """Ask Safaricom for the result of one prompt (used when no callback arrived).
+
+    Returns (result_code, result_desc). Raises MpesaError while Safaricom is
+    still processing it or cannot be reached.
+    """
+    cfg = settings()
+    stamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    password = base64.b64encode(
+        (cfg['MPESA_SHORTCODE'] + cfg['MPESA_PASSKEY'] + stamp).encode()).decode()
+    body = _call(
+        cfg['base'] + '/mpesa/stkpushquery/v1/query',
+        payload={'BusinessShortCode': cfg['MPESA_SHORTCODE'], 'Password': password,
+                 'Timestamp': stamp, 'CheckoutRequestID': checkout_request_id},
+        headers={'Authorization': 'Bearer ' + access_token(cfg),
+                 'Content-Type': 'application/json'})
+    if 'ResultCode' not in body:
+        raise MpesaError('Safaricom gave no result yet')
+    return str(body.get('ResultCode')), str(body.get('ResultDesc') or '')

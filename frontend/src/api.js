@@ -5,7 +5,7 @@ const BASE_URL = process.env.REACT_APP_API_URL
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -165,4 +165,8 @@ export const insightsAPI = {
   giving:   () => api.get('/api/insights/giving'),
   forecast: () => api.get('/api/insights/forecast'),
   summary:  () => api.get('/api/insights/summary'),
+};
+
+export const healthAPI = {
+  check: () => api.get('/api/health', { timeout: 60000 }),
 };
