@@ -11,7 +11,7 @@
 [![CI](https://github.com/jameskoero/ChurchOS/actions/workflows/ci.yml/badge.svg)](https://github.com/jameskoero/ChurchOS/actions)
 
 **Backend:** `https://churchos-yitr.onrender.com` | **Frontend:** `https://churchos-app.vercel.app`
-**Version:** v2.0.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
+**Version:** v2.5.0 | **Maintainer:** [James Koero](https://linkedin.com/in/jameskoero) · Kisumu, Kenya
 
 ---
 
@@ -58,7 +58,7 @@ ChurchOS is a direct answer to that gap.
 - What does a church actually need to manage? → Members, Attendance, Finance, Events
 - What hierarchy does African Pentecostal governance follow? → 5-tier RBAC
 - How should money move through the system? → M-Pesa as first-class citizen
-- What happens when the internet is unstable? → PWA with offline service worker
+- What happens when the internet is unstable? → Installable PWA; offline attendance is on the roadmap
 - How should multi-tenancy be enforced? → church_id filter at ORM layer
 
 ---
@@ -112,7 +112,7 @@ Every SQLAlchemy query filtered by church_id at the ORM layer.
 | Auth | JWT access + refresh tokens, RBAC (5 roles) |
 | Payments | M-Pesa Daraja STK Push, Flutterwave (routes built; credentials needed) |
 | Deploy | Render (backend Docker) + Neon (DB) + Vercel (frontend) |
-| PWA | Service Worker, Web App Manifest (ChurchOS, installable on Android) |
+| PWA | Web App Manifest (ChurchOS, installable on Android) |
 | CI/CD | GitHub Actions |
 
 ---
@@ -130,7 +130,7 @@ Every SQLAlchemy query filtered by church_id at the ORM layer.
 - **Churches management** — register churches with county, sub-county, denomination, size, paybill
 - **47 Kenyan counties** — all constitutional counties in dropdowns (Members + Churches forms)
 - **Denomination registry** — 17 denominations including Ministry of Repentance and Holiness
-- **PWA** — installable on Android, offline-capable service worker
+- **PWA** — installable on Android (offline attendance is on the roadmap)
 - **Audit trail** — every create, edit, verify and void is recorded in an append-only log; money is voided, never deleted; a second person verifies
 
 ---
@@ -179,6 +179,17 @@ and `/api/churches/constants`.
 | GET/POST | /api/churches/ | List or register churches (admin) |
 | GET/PUT/DELETE | /api/churches/:id | Read, update, delete church (admin) |
 | GET | /api/health | Health check |
+| POST | /api/finance/:id/verify | Second person verifies a transaction (admin, treasurer) |
+| GET | /api/finance/audit | Append-only change log (admin) |
+| GET | /api/members/:id/export | One member's data, for a data-access request |
+| POST | /api/members/:id/erase | Erase a member's personal details (admin) |
+| POST | /api/payments/mpesa/stk | Send an M-Pesa payment prompt (admin, treasurer) |
+| GET | /api/payments/requests, /api/payments/requests/:id | Payment prompts and their status |
+| GET | /api/payments/inbox | Paybill payments waiting for a member |
+| POST | /api/payments/inbox/:id/match, /api/payments/inbox/:id/ignore | Match or ignore a Paybill payment |
+| POST | /api/payments/mpesa/callback/:secret | Safaricom prompt result (called by Safaricom) |
+| POST | /api/payments/mpesa/c2b/:secret/confirmation | Safaricom Paybill payment (called by Safaricom) |
+| GET | /api/insights/care, /giving, /forecast, /summary | Explainable insights from your own records |
 
 ---
 
@@ -239,7 +250,7 @@ Import repo → Root Directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - Refresh token rotation — stolen tokens expire after one use
 - CORS supports comma-separated FRONTEND_URL (multi-origin)
 - Multi-tenant isolation: every route reads and writes through church-scoped helpers (backend/tenancy.py), covered by two-church tests
-- Payment webhooks: not yet implemented
+- M-Pesa callbacks are unsigned by Safaricom, so they are protected by a secret in the callback address, an optional IP allowlist, and matching against requests this app made itself
 - Passwords: Flask-Bcrypt (cost factor 12)
 - First admin created once from ADMIN_BOOTSTRAP_PASSWORD; startup never resets a password
 
@@ -247,7 +258,19 @@ Import repo → Root Directory: `frontend` → set `REACT_APP_API_URL` → auto-
 
 ## 13. Roadmap
 
-### v2.0.0 — Current
+### v2.5.0 — Current
+- [x] Church separation on every route, platform-owner role
+- [x] Revocable sessions, rotating refresh tokens, login limits and lockout
+- [x] Money integrity: second-person verify, void instead of delete, append-only audit log
+- [x] Member privacy: consent, sensitive-field redaction, export and erase
+- [x] M-Pesa prompts, Paybill callbacks and matching inbox (sandbox-ready)
+- [x] Explainable insights: care list, giving flags, forecast, plain-language summary
+- [x] Cobalt portfolio-style interface
+- [ ] Offline attendance with sync
+- [ ] SMS via Africa's Talking
+- [ ] Billing for churches (M-Pesa subscriptions) and plan limits
+
+### v2.0.0
 - [x] Multi-church tenancy, 30-day trial
 - [x] Member registry (CHR-XXXXXX)
 - [x] Attendance, Finance, Events modules
@@ -274,6 +297,14 @@ Import repo → Root Directory: `frontend` → set `REACT_APP_API_URL` → auto-
 ---
 
 ## 14. Changelog
+
+### v2.5.0 — 2026-11-11
+- Church separation, platform owner, revocable sessions, login limits
+- Money integrity: second-person verify, void not delete, audit log
+- Member consent, redaction, export and erase
+- M-Pesa prompts and Paybill inbox
+- Explainable insights and the new cobalt interface
+- Dependency security updates (Flask, Werkzeug, Jinja2, Flask-CORS, python-dotenv, marshmallow)
 
 ### v2.0.0 — 2026-06-08
 - Rebranded from CMDMS to ChurchOS
