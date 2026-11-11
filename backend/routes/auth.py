@@ -51,6 +51,7 @@ def _claims(user):
         'role': user.role,
         'username': user.username or '',
         'church_id': user.church_id,
+        'owner': bool(user.is_platform_owner),
         'tv': int(user.token_version or 0),
     }
 

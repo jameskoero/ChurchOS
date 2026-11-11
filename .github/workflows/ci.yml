@@ -18,3 +18,25 @@ jobs:
         run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
       - name: Tests
         run: python -m pytest backend/tests -q
+      - name: Dependency vulnerability scan (report only)
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/requirements.txt
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+      - name: Install
+        run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      - name: Build
+        run: npm run build
+        env:
+          CI: "false"

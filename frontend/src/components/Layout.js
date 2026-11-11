@@ -7,6 +7,7 @@ const NAV = [
   {path:'/members',label:'Members',icon:'\ud83d\udc65'},
   {path:'/attendance',label:'Attendance',icon:'\u2705'},
   {path:'/finance',label:'Finance',icon:'\ud83d\udcb0',requiredRole:'treasurer'},
+  {path:'/payments',label:'Payments',icon:'\ud83d\udcf2',requiredRole:'treasurer'},
   {path:'/events',label:'Events',icon:'\ud83d\udcc5'},
   {path:'/churches',label:'Churches',icon:'\u26ea',requiredRole:'admin'},
   {path:'/users',label:'Users',icon:'\ud83d\udd10',requiredRole:'admin'},

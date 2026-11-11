@@ -2,11 +2,12 @@ services:
   - type: web
     name: churchos-backend
     runtime: docker
-    plan: free
+    plan: free            # move to "starter" before onboarding paying churches
     region: oregon
     rootDir: backend
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    healthCheckPath: /api/health
     autoDeployTrigger: commit
     envVars:
       - key: SECRET_KEY
@@ -17,10 +18,24 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
+      - key: PLATFORM_OWNER_EMAIL
+        sync: false
       - key: MPESA_CONSUMER_KEY
         sync: false
       - key: MPESA_CONSUMER_SECRET
         sync: false
+      - key: MPESA_SHORTCODE
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_CALLBACK_URL
+        sync: false
+      - key: MPESA_CALLBACK_SECRET
+        sync: false
+      - key: MPESA_ENV
+        value: sandbox
       - key: FLW_SECRET_KEY
         sync: false
       - key: FLW_SECRET_HASH

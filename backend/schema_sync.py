@@ -9,6 +9,16 @@ ADDITIONS = [
     ('users', 'failed_logins', 'INTEGER DEFAULT 0'),
     ('users', 'locked_until', 'TIMESTAMP'),
     ('users', 'token_version', 'INTEGER DEFAULT 0'),
+    ('users', 'is_platform_owner', 'BOOLEAN DEFAULT FALSE'),
+    ('finance', 'verified_by', 'INTEGER'),
+    ('finance', 'verified_at', 'TIMESTAMP'),
+    ('finance', 'status', "VARCHAR(10) DEFAULT 'posted'"),
+    ('finance', 'voided_by', 'INTEGER'),
+    ('finance', 'voided_at', 'TIMESTAMP'),
+    ('finance', 'void_reason', 'TEXT'),
+    ('members', 'consent_at', 'TIMESTAMP'),
+    ('members', 'consent_version', 'VARCHAR(20)'),
+    ('members', 'erased_at', 'TIMESTAMP'),
 ]
 
 

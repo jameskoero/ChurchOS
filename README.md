@@ -131,7 +131,7 @@ Every SQLAlchemy query filtered by church_id at the ORM layer.
 - **47 Kenyan counties** — all constitutional counties in dropdowns (Members + Churches forms)
 - **Denomination registry** — 17 denominations including Ministry of Repentance and Holiness
 - **PWA** — installable on Android, offline-capable service worker
-- **Audit trail** — every financial action timestamped and attributed
+- **Audit trail** — every create, edit, verify and void is recorded in an append-only log; money is voided, never deleted; a second person verifies
 
 ---
 
@@ -238,7 +238,7 @@ Import repo → Root Directory: `frontend` → set `REACT_APP_API_URL` → auto-
 - JWT blocklist — logout actually revokes tokens
 - Refresh token rotation — stolen tokens expire after one use
 - CORS supports comma-separated FRONTEND_URL (multi-origin)
-- Multi-tenant isolation: NOT yet enforced in the API (planned)
+- Multi-tenant isolation: every route reads and writes through church-scoped helpers (backend/tenancy.py), covered by two-church tests
 - Payment webhooks: not yet implemented
 - Passwords: Flask-Bcrypt (cost factor 12)
 - First admin created once from ADMIN_BOOTSTRAP_PASSWORD; startup never resets a password

@@ -11,6 +11,7 @@ import Events from './pages/Events';
 import Churches from './pages/Churches';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
+import Payments from './pages/Payments';
 function ProtectedRoute({children,requiredRole}) {
   const {user,loading} = useAuth();
   if (loading) return <div style={{display:'flex',alignItems:'center',
@@ -49,6 +50,7 @@ export default function App() {
             <ProtectedRoute requiredRole='admin'>
               <Users/>
             </ProtectedRoute>}/>
+          <Route path='payments' element={<Payments/>}/>
           <Route path='profile' element={<Profile/>}/>
         </Route>
         <Route path='*' element={<Navigate to='/' replace/>}/>

@@ -10,7 +10,8 @@ from sqlalchemy.exc import IntegrityError
 
 from config import config
 from extensions import limiter
-from models import db, bcrypt, User, Church, TokenBlocklist
+from models import (db, bcrypt, User, Church, TokenBlocklist,
+                    Member, Attendance, Finance, Event)
 from schema_sync import sync_schema
 
 migrate = Migrate()
@@ -63,6 +64,8 @@ def create_app(config_name=None, overrides=None):
     from routes.users      import users_bp
     from routes.dashboard  import dashboard_bp
     from routes.churches   import churches_bp
+    from routes.payments   import payments_bp
+    from routes.insights   import insights_bp
     app.register_blueprint(auth_bp,       url_prefix='/api/auth')
     app.register_blueprint(members_bp,    url_prefix='/api/members')
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
@@ -71,6 +74,8 @@ def create_app(config_name=None, overrides=None):
     app.register_blueprint(users_bp,      url_prefix='/api/users')
     app.register_blueprint(dashboard_bp,  url_prefix='/api/dashboard')
     app.register_blueprint(churches_bp,   url_prefix='/api/churches')
+    app.register_blueprint(payments_bp,   url_prefix='/api/payments')
+    app.register_blueprint(insights_bp,   url_prefix='/api/insights')
 
     # ── JWT: every token is checked against the blocklist and the user ──────
     @jwt.token_in_blocklist_loader
@@ -103,6 +108,10 @@ def create_app(config_name=None, overrides=None):
         return jsonify({'error': 'Token required', 'code': 'TOKEN_MISSING'}), 401
 
     # ── Errors as JSON, never stack traces ───────────────────────────────────
+    @app.errorhandler(403)
+    def forbidden(e):
+        return jsonify({'error': 'Not allowed', 'code': 'FORBIDDEN'}), 403
+
     @app.errorhandler(404)
     def not_found(e):
         return jsonify({'error': 'Not found', 'code': 'NOT_FOUND'}), 404
@@ -136,11 +145,12 @@ def create_app(config_name=None, overrides=None):
 
     @app.route('/api/health')
     def health():
-        return jsonify({'status': 'ok', 'app': 'ChurchOS', 'version': '2.1.0'}), 200
+        return jsonify({'status': 'ok', 'app': 'ChurchOS', 'version': '2.5.0'}), 200
 
     with app.app_context():
         _init_db()
         _bootstrap()
+        _tenancy_upgrade()
     return app
 
 
@@ -199,3 +209,32 @@ def _bootstrap():
         return 'race'
     log.warning('[bootstrap] admin user created')
     return 'created'
+
+
+def _tenancy_upgrade():
+    """Name a platform owner and give every church-less row a church.
+
+    Before church separation, rows were saved with no church at all. They
+    belonged to the one church in use, so they go to the first admin's church.
+    Safe to run on every start: it only touches rows whose church is empty.
+    """
+    first_admin = User.query.filter_by(role='admin').order_by(User.id).first()
+    if first_admin is None:
+        return
+    if User.query.filter_by(is_platform_owner=True).first() is None:
+        wanted = os.environ.get('PLATFORM_OWNER_EMAIL', '').strip().lower()
+        owner = User.query.filter_by(email=wanted).first() if wanted else None
+        (owner or first_admin).is_platform_owner = True
+        log.warning('[tenancy] platform owner set')
+    home = first_admin.church_id
+    if home is None:
+        church = Church.query.order_by(Church.id).first()
+        home = church.id if church else None
+    if home is not None:
+        for model in (User, Member, Attendance, Finance, Event):
+            moved = model.query.filter(model.church_id.is_(None)).update(
+                {'church_id': home}, synchronize_session=False)
+            if moved:
+                log.warning('[tenancy] %s: %d rows given church %s',
+                            model.__tablename__, moved, home)
+    db.session.commit()

@@ -115,6 +115,7 @@ export const financeAPI = {
   create:              d       => api.post('/api/finance/', d),
   update:              (id, d) => api.put(`/api/finance/${id}`, d),
   delete:              id      => api.delete(`/api/finance/${id}`),
+  verify:              id      => api.post(`/api/finance/${id}/verify`),
   getSummary:          p       => api.get('/api/finance/summary', { params: p }),
   getTransactionTypes: ()      => api.get('/api/finance/transaction-types'),
   getCategories:       ()      => api.get('/api/finance/categories'),
@@ -151,3 +152,17 @@ export const churchesAPI = {
 };
 
 export default api;
+
+export const paymentsAPI = {
+  stk:        d       => api.post('/api/payments/mpesa/stk', d),
+  getRequest: id      => api.get(`/api/payments/requests/${id}`),
+  inbox:      p       => api.get('/api/payments/inbox', { params: p }),
+  match:      (id, d) => api.post(`/api/payments/inbox/${id}/match`, d),
+  ignore:     (id, d) => api.post(`/api/payments/inbox/${id}/ignore`, d),
+};
+export const insightsAPI = {
+  care:     p => api.get('/api/insights/care', { params: p }),
+  giving:   () => api.get('/api/insights/giving'),
+  forecast: () => api.get('/api/insights/forecast'),
+  summary:  () => api.get('/api/insights/summary'),
+};

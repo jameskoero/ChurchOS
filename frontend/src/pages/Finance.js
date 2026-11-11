@@ -107,6 +107,11 @@ export default function Finance() {
     } finally { setSaving(false); }
   };
 
+  const handleVerify = async (id) => {
+    try { await financeAPI.verify(id); fetchTransactions(); }
+    catch (err) { alert(err.response?.data?.error || 'Could not verify this transaction'); }
+  };
+
   const handleDelete = async (id) => {
     try { await financeAPI.delete(id); setDeleteConfirm(null); fetchTransactions(); fetchSummary(); }
     catch (err) { alert(err.response?.data?.error || 'Delete failed'); }
@@ -257,8 +262,9 @@ export default function Finance() {
                         {can('manage_finance') && (
                           <td>
                             <div style={{ display: 'flex', gap: '0.4rem' }}>
+                              {!tx.verified && <button className="btn btn-outline btn-sm" onClick={() => handleVerify(tx.id)}>Verify</button>}
                               <button className="btn btn-outline btn-sm" onClick={() => openEdit(tx)}>Edit</button>
-                              {can('delete') && <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(tx)}>Del</button>}
+                              {can('delete') && <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(tx)}>Void</button>}
                             </div>
                           </td>
                         )}
@@ -366,12 +372,12 @@ export default function Finance() {
           <div className="modal" style={{ maxWidth: 380 }}>
             <div className="modal-header"><span className="modal-title">Delete Transaction?</span></div>
             <div className="modal-body">
-              <p>Delete <strong>{deleteConfirm.reference}</strong> ({fmt(deleteConfirm.amount)})?</p>
+              <p>Void <strong>{deleteConfirm.reference}</strong> ({fmt(deleteConfirm.amount)})?</p>
               <p style={{ color: 'var(--danger)', fontSize: '0.85rem', marginTop: '0.5rem' }}>This cannot be undone.</p>
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setDeleteConfirm(null)}>Cancel</button>
-              <button className="btn btn-danger" onClick={() => handleDelete(deleteConfirm.id)}>Delete</button>
+              <button className="btn btn-danger" onClick={() => handleDelete(deleteConfirm.id)}>Void</button>
             </div>
           </div>
         </div>
