@@ -14,6 +14,7 @@
 .lg-go { margin-top: 16px; min-height: 52px; border-radius: 26px; border: 0; background: #FFD84A; color: #0C1445; font-weight: 800; font-size: 1.05rem; cursor: pointer; font-family: inherit; }
 .lg-go:hover:not(:disabled) { background: #FFE27A; }
 .lg-go:disabled { opacity: 0.6; cursor: default; }
+.lg-note { background: #FFF4C2; color: #5C4700; border-radius: 14px; padding: 12px 14px; font-weight: 600; font-size: 0.92rem; }
 .lg-error { background: #FCE4E2; color: #7A1A12; border-radius: 14px; padding: 12px 14px; font-weight: 600; font-size: 0.92rem; }
 .lg-foot { text-align: center; color: #5A6487; font-size: 0.82rem; margin: 14px 0 0; }
 .lg *:focus-visible { outline: 3px solid #FFD84A; outline-offset: 2px; }

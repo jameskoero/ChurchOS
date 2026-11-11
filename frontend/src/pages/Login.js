@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { healthAPI } from '../api';
 import './login.css';
 
 export default function Login() {
@@ -9,6 +10,16 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPwd, setShowPwd] = useState(false);
+  const [server, setServer] = useState('waking');   // waking | ready | down
+
+  // The free server sleeps when idle; start waking it as soon as this page opens.
+  useEffect(() => {
+    let live = true;
+    healthAPI.check()
+      .then(() => live && setServer('ready'))
+      .catch(() => live && setServer('down'));
+    return () => { live = false; };
+  }, []);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -20,7 +31,12 @@ export default function Login() {
       await login(form.username, form.password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Sign in failed. Check your details and try again.');
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setServer('down');
+        setError('The server did not answer. It may still be waking up: wait 30 seconds, then tap Sign in again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -41,6 +57,7 @@ export default function Login() {
 
       <form className="lg-card" onSubmit={handleSubmit}>
         <h2 className="lg-h">Sign in</h2>
+        {server === 'waking' && <div className="lg-note" role="status">Connecting to the server. This can take up to a minute after a quiet spell.</div>}
         {error && <div className="lg-error" role="alert">{error}</div>}
 
         <label className="lg-label" htmlFor="lg-user">Username or email</label>
