@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy import func
 
-from ledger import live_money, money, audit
+from ledger import live_money, money, audit, new_reference
 from models import (db, Finance, Member, User, AuditLog,
                     TRANSACTION_TYPES, FINANCE_CATEGORIES)
 from tenancy import (current_church_id, scoped, owned_or_404, tquery,
@@ -66,11 +66,7 @@ def _same(field, old, new):
 
 
 def _new_reference():
-    for _ in range(20):
-        reference = Finance.generate_reference()
-        if Finance.query.filter_by(reference=reference).first() is None:
-            return reference
-    raise RuntimeError('could not allocate a transaction reference')
+    return new_reference()
 
 
 def _duplicate_mpesa(mpesa_ref, ignore_id=None):

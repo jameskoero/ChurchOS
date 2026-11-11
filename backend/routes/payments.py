@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 
 from extensions import limiter, client_ip
-from ledger import audit, live_money, money
+from ledger import audit, live_money, money, new_reference
 from models import (db, Church, Finance, Member, PaymentEvent, PaymentRequest,
                     TRANSACTION_TYPES)
 from services import mpesa
@@ -65,11 +65,7 @@ def _guard(secret):
 
 
 def _new_reference():
-    for _ in range(20):
-        reference = Finance.generate_reference()
-        if Finance.query.filter_by(reference=reference).first() is None:
-            return reference
-    raise RuntimeError('could not allocate a transaction reference')
+    return new_reference()
 
 
 def _already_recorded(church_id, mpesa_ref):

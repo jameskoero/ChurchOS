@@ -26,12 +26,13 @@ def money(value):
         amount = Decimal(str(value).strip())
     except (InvalidOperation, ValueError):
         return None
-    if not amount.is_finite():
+    # Check the size first: rounding a huge number raises instead of failing quietly.
+    if not amount.is_finite() or amount <= 0 or amount > MAX_AMOUNT:
         return None
-    amount = amount.quantize(CENT, rounding=ROUND_HALF_UP)
-    if amount <= 0 or amount > MAX_AMOUNT:
+    try:
+        return amount.quantize(CENT, rounding=ROUND_HALF_UP)
+    except InvalidOperation:
         return None
-    return amount
 
 
 def audit(action, entity, entity_id, before=None, after=None,
@@ -42,9 +43,17 @@ def audit(action, entity, entity_id, before=None, after=None,
     System actions (such as a payment callback) pass them explicitly.
     """
     forwarded = request.headers.get('X-Forwarded-For', '').split(',')[0].strip()
+    if church_id is None:
+        church_id = current_church_id()
+    if user_id is None:
+        # System actions (a Paybill payment arriving) have no signed-in user.
+        try:
+            user_id = int(get_jwt_identity())
+        except (RuntimeError, TypeError, ValueError):
+            user_id = None
     db.session.add(AuditLog(
-        church_id=church_id if church_id is not None else current_church_id(),
-        user_id=user_id if user_id is not None else int(get_jwt_identity()),
+        church_id=church_id,
+        user_id=user_id,
         action=action,
         entity=entity,
         entity_id=entity_id,
@@ -52,3 +61,12 @@ def audit(action, entity, entity_id, before=None, after=None,
         after=json.dumps(after, default=str, sort_keys=True) if after is not None else None,
         ip=(forwarded or request.remote_addr or '')[:64],
     ))
+
+
+def new_reference():
+    """A transaction reference not used by any church (references are unique)."""
+    for _ in range(20):
+        reference = Finance.generate_reference()
+        if Finance.query.filter_by(reference=reference).first() is None:
+            return reference
+    raise RuntimeError('could not allocate a transaction reference')
