@@ -35,7 +35,7 @@ def test_every_api_path_the_dashboard_and_payments_use_exists_on_the_server(app)
 
 def test_payments_page_is_routed_and_in_the_menu():
     assert "path='payments'" in text('frontend', 'src', 'App.js')
-    assert "path:'/payments'" in text('frontend', 'src', 'components', 'Layout.js')
+    assert "path: '/payments'" in text('frontend', 'src', 'components', 'Layout.js')
 
 
 def test_finance_page_can_verify_and_says_void():
@@ -50,9 +50,9 @@ def test_member_form_asks_for_consent():
 
 def test_brand_colours_and_fonts_are_set():
     css = text('frontend', 'src', 'index.css')
-    for token in ('--navy: #1A2744;', '--gold: #D9A441;', '--gray-100: #F6F3EC;', 'source-sans-3'):
+    for token in ('--navy: #0C1445;', '--gold: #FFD84A;', '--gray-100: #F2F4FA;', 'acumin-pro'):
         assert token in css, token
-    assert 'use.typekit.net/qey6amj.css' in text('frontend', 'public', 'index.html')
+    assert 'use.typekit.net/bdl1hjb.css' in text('frontend', 'public', 'index.html')
 
 
 def test_dashboard_uses_no_invented_numbers():

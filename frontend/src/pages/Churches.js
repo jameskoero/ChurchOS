@@ -6,7 +6,7 @@ const EMPTY = {name:'',county:'',sub_county:'',denomination:'',
                size:'',paybill:'',till_number:'',phone:'',
                email:'',address:'',member_prefix:'CHR'};
 function planBadge(plan) {
-  const colors={trial:'#6c757d',seed:'#28a745',growth:'#007bff',parish:'#fd7e14',cathedral:'#6f42c1'};
+  const colors={trial:'#6c757d',seed:'#12805C',growth:'#007bff',parish:'#fd7e14',cathedral:'#6f42c1'};
   const info=PLAN_LABELS[plan]||{};
   return <span style={{background:colors[plan]||'#6c757d',color:'#fff',
     padding:'2px 8px',borderRadius:12,fontSize:'0.75rem',fontWeight:600,

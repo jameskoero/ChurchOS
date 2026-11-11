@@ -49,7 +49,7 @@ def create_app(config_name=None, overrides=None):
 
     # CORS: named origins only. Never "*".
     CORS(app, resources={
-        r"/api/*": {
+        r"/api/.*": {
             "origins": allowed_origins(app),
             "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
@@ -145,7 +145,7 @@ def create_app(config_name=None, overrides=None):
 
     @app.route('/api/health')
     def health():
-        return jsonify({'status': 'ok', 'app': 'ChurchOS', 'version': '2.5.0'}), 200
+        return jsonify({'status': 'ok', 'app': 'ChurchOS', 'version': '2.5.1'}), 200
 
     with app.app_context():
         _init_db()

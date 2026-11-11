@@ -15,7 +15,7 @@ import Payments from './pages/Payments';
 function ProtectedRoute({children,requiredRole}) {
   const {user,loading} = useAuth();
   if (loading) return <div style={{display:'flex',alignItems:'center',
-    justifyContent:'center',height:'100vh',background:'#0D1B2A'}}>
+    justifyContent:'center',height:'100vh',background:'#0C1445'}}>
     <div className='loader' style={{width:40,height:40,borderWidth:3}}/></div>;
   if (!user) return <Navigate to='/login' replace/>;
   if (requiredRole) {
