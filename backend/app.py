@@ -67,6 +67,7 @@ def create_app(config_name=None, overrides=None):
     from routes.payments   import payments_bp
     from routes.insights   import insights_bp
     from routes.accounts   import accounts_bp
+    from routes.reports    import reports_bp
     app.register_blueprint(auth_bp,       url_prefix='/api/auth')
     app.register_blueprint(members_bp,    url_prefix='/api/members')
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
@@ -78,6 +79,7 @@ def create_app(config_name=None, overrides=None):
     app.register_blueprint(payments_bp,   url_prefix='/api/payments')
     app.register_blueprint(insights_bp,   url_prefix='/api/insights')
     app.register_blueprint(accounts_bp,   url_prefix='/api/accounts')
+    app.register_blueprint(reports_bp,    url_prefix='/api/reports')
 
     # ── JWT: every token is checked against the blocklist and the user ──────
     @jwt.token_in_blocklist_loader
