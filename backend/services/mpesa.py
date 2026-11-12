@@ -120,3 +120,31 @@ def stk_query(checkout_request_id):
     if 'ResultCode' not in body:
         raise MpesaError('Safaricom gave no result yet')
     return str(body.get('ResultCode')), str(body.get('ResultDesc') or '')
+
+
+def setup_status():
+    """Which M-Pesa settings are present. Names only: values are never returned."""
+    values = {name: os.environ.get(name, '').strip() for name in _REQUIRED}
+    missing = [name for name, value in values.items() if not value]
+    problems = []
+    url = values['MPESA_CALLBACK_URL'].lower()
+    if url and not url.startswith('https://'):
+        problems.append('MPESA_CALLBACK_URL must start with https://')
+    if url and any(word in url for word in ('mpesa', 'm-pesa', 'safaricom')):
+        problems.append('MPESA_CALLBACK_URL must not contain the words mpesa or safaricom')
+    if url and url.rstrip('/').count('/') > 2:
+        problems.append('MPESA_CALLBACK_URL must be only the server address, with no path after it')
+    secret = values['MPESA_CALLBACK_SECRET']
+    if secret and len(secret) < 16:
+        problems.append('MPESA_CALLBACK_SECRET must be at least 16 characters')
+    live = os.environ.get('MPESA_ENV', 'sandbox').strip().lower() in ('live', 'production')
+    return {'configured': not missing and not problems, 'missing': missing,
+            'problems': problems, 'environment': 'live' if live else 'sandbox'}
+
+
+def test_credentials():
+    """Ask Safaricom for a fresh access token. Raises MpesaError if the keys are refused."""
+    cfg = settings()
+    _token['value'] = None
+    access_token(cfg)
+    return True

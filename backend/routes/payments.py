@@ -124,7 +124,8 @@ def start_stk():
         sent = mpesa.stk_push(phone, amount, member.member_id if member else 'CHURCH',
                               'Church giving')
     except mpesa.NotConfigured:
-        return jsonify({'error': 'M-Pesa is not set up yet', 'code': 'MPESA_NOT_CONFIGURED'}), 503
+        return jsonify({'error': 'M-Pesa is not set up yet', 'code': 'MPESA_NOT_CONFIGURED',
+                        'missing': mpesa.setup_status()['missing']}), 503
     except mpesa.MpesaError as err:
         log.warning('stk push failed: %s', err)
         return jsonify({'error': 'Safaricom could not send the prompt. Try again.',
@@ -141,6 +142,31 @@ def start_stk():
     audit('payment.request', 'payment', pr.id, after={'amount': str(amount), 'phone': pr.phone_masked})
     db.session.commit()
     return jsonify(pr.to_dict()), 202
+
+
+@payments_bp.route('/setup', methods=['GET'])
+@jwt_required()
+@roles_required(*PAY_ROLES)
+def setup_status():
+    """Tells staff which M-Pesa settings are missing. Never returns a secret."""
+    return jsonify(mpesa.setup_status()), 200
+
+
+@payments_bp.route('/setup/test', methods=['POST'])
+@jwt_required()
+@roles_required('admin')
+@limiter.limit('6 per minute')
+def setup_test():
+    status = mpesa.setup_status()
+    if status['missing']:
+        return jsonify({'ok': False, 'error': 'Add the missing settings first',
+                        'missing': status['missing']}), 400
+    try:
+        mpesa.test_credentials()
+    except mpesa.MpesaError as err:
+        return jsonify({'ok': False,
+                        'error': 'Safaricom did not accept the Consumer Key and Secret (%s)' % err}), 502
+    return jsonify({'ok': True, 'message': 'Safaricom accepted your Consumer Key and Secret.'}), 200
 
 
 @payments_bp.route('/requests', methods=['GET'])

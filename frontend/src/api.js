@@ -155,6 +155,8 @@ export default api;
 
 export const paymentsAPI = {
   stk:        d       => api.post('/api/payments/mpesa/stk', d),
+  setup:      ()      => api.get('/api/payments/setup'),
+  testSetup:  ()      => api.post('/api/payments/setup/test'),
   getRequest: id      => api.get(`/api/payments/requests/${id}`),
   inbox:      p       => api.get('/api/payments/inbox', { params: p }),
   match:      (id, d) => api.post(`/api/payments/inbox/${id}/match`, d),
