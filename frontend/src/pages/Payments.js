@@ -84,7 +84,9 @@ function AskForPayment() {
       const res = await paymentsAPI.stk(body);
       setSent(res.data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not send the request. Try again.');
+      const data = err.response?.data;
+      const missing = data?.missing?.length ? ` Missing: ${data.missing.join(', ')}.` : '';
+      setError((data?.error || 'Could not send the request. Try again.') + missing);
     } finally {
       setBusy(false);
     }
@@ -203,6 +205,58 @@ function Inbox() {
   );
 }
 
+function SetupCheck() {
+  const { user } = useAuth();
+  const [status, setStatus] = useState(null);
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    paymentsAPI.setup().then(r => setStatus(r.data)).catch(() => setStatus(null));
+  }, []);
+
+  const test = async () => {
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await paymentsAPI.testSetup();
+      setResult({ ok: true, text: res.data.message });
+    } catch (err) {
+      setResult({ ok: false, text: err.response?.data?.error || 'The test could not run. Try again.' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!status) return null;
+  const items = [...status.missing.map(name => `Missing in Render: ${name}`), ...status.problems];
+  return (
+    <section className="cd-card" style={{ marginBottom: '0.9rem' }} aria-labelledby="pay-setup">
+      <h2 className="cd-h" id="pay-setup">M-Pesa setup {status.configured
+        ? <span className="cd-badge">ready · {status.environment}</span>
+        : <span className="cd-badge">needs attention</span>}</h2>
+      {status.configured ? (
+        <p className="cd-hint">All settings are present. Use the test to confirm Safaricom accepts your keys.</p>
+      ) : (
+        <>
+          <p className="cd-hint">Fix these in Render, under Environment, then reload this page.</p>
+          <ul className="cd-list">{items.map(text => <li key={text} className="cd-item">{text}</li>)}</ul>
+        </>
+      )}
+      {user?.role === 'admin' && status.missing.length === 0 && (
+        <button type="button" className="cd-act alt" style={{ marginTop: '0.8rem' }} onClick={test} disabled={busy}>
+          {busy ? 'Testing…' : 'Test connection to Safaricom'}
+        </button>
+      )}
+      {result && (
+        <div className={result.ok ? 'cd-item' : 'cd-err'} role="status" style={{ marginTop: '0.8rem' }}>
+          <span>{result.text}</span>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Payments() {
   const { user } = useAuth();
   if (!['admin', 'treasurer'].includes(user?.role)) {
@@ -216,6 +270,7 @@ export default function Payments() {
           <p className="cd-sub">Ask for M-Pesa payments and match what arrives on your Paybill.</p>
         </div>
       </div>
+      <SetupCheck />
       <div className="cd-grid even">
         <AskForPayment />
         <Inbox />
