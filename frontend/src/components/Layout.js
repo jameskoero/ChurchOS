@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { churchesAPI } from '../api';
+import { billingAPI, churchesAPI } from '../api';
 import './layout.css';
 
 const ICONS = {
@@ -38,6 +38,7 @@ const NAV = [
   { path: '/events', label: 'Events', icon: 'calendar' },
   { path: '/churches', label: 'Churches', icon: 'church', requiredRole: 'admin' },
   { path: '/users', label: 'Users', icon: 'key', requiredRole: 'admin' },
+  { path: '/billing', label: 'Billing', icon: 'coins', requiredRole: 'admin' },
 ];
 const HIERARCHY = { admin: 5, pastor: 4, treasurer: 3, secretary: 2, viewer: 1 };
 
@@ -47,6 +48,7 @@ export default function Layout() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [churchName, setChurchName] = useState('');
+  const [billing, setBilling] = useState(null);
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
 
   useEffect(() => {
@@ -56,6 +58,10 @@ export default function Layout() {
   }, []);
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    billingAPI.status().then(r => setBilling(r.data)).catch(() => setBilling(null));
+  }, [location.pathname]);
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -126,7 +132,17 @@ export default function Layout() {
             </span>
           </span>
         </header>
-        <main className="ly-content"><Outlet /></main>
+        <main className="ly-content">
+          {billing && (billing.state === 'grace' || billing.state === 'locked') && (
+            <div className={`ly-bill ${billing.state}`} role="status">
+              <span>{billing.state === 'locked'
+                ? 'The subscription for this church has ended. You can still view everything, but new records are paused.'
+                : `The ${billing.previous === 'trial' ? 'free trial' : 'subscription'} has ended. New records pause in ${billing.days_left} days.`}</span>
+              {user?.role === 'admin' && <NavLink to="/billing" className="ly-bill-go">Renew</NavLink>}
+            </div>
+          )}
+          <Outlet />
+        </main>
       </div>
     </div>
   );
