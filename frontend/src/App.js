@@ -12,6 +12,7 @@ import Churches from './pages/Churches';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import Payments from './pages/Payments';
+import Reports from './pages/Reports';
 function ProtectedRoute({children,requiredRole}) {
   const {user,loading} = useAuth();
   if (loading) return <div style={{display:'flex',alignItems:'center',
@@ -51,6 +52,7 @@ export default function App() {
               <Users/>
             </ProtectedRoute>}/>
           <Route path='payments' element={<Payments/>}/>
+          <Route path='reports' element={<Reports/>}/>
           <Route path='profile' element={<Profile/>}/>
         </Route>
         <Route path='*' element={<Navigate to='/' replace/>}/>

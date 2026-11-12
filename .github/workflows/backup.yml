@@ -1,0 +1,40 @@
+name: Database backup
+on:
+  schedule:
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check the secrets exist
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ ${#BACKUP_PASSPHRASE} -lt 20 ]; then
+            echo "::error::Add BACKUP_DATABASE_URL and a BACKUP_PASSPHRASE of 20 or more characters under Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+      - name: Dump, then encrypt (the plain dump never leaves this runner)
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          stamp=$(date -u +%Y%m%d-%H%M)
+          docker run --rm postgres:18 pg_dump --no-owner --no-privileges --format=custom "$DATABASE_URL" > db.dump
+          test -s db.dump
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+              --symmetric --cipher-algo AES256 -o "churchos-$stamp.dump.gpg" db.dump
+          shred -u db.dump 2>/dev/null || rm -f db.dump
+          echo "BACKUP_FILE=churchos-$stamp.dump.gpg" >> "$GITHUB_ENV"
+          ls -l churchos-*.dump.gpg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BACKUP_FILE }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 14
+          if-no-files-found: error

@@ -179,3 +179,8 @@ export const accountsAPI = {
   remove:          id      => api.delete(`/api/accounts/${id}`),
   importStatement: d       => api.post('/api/accounts/import-statement', d, { timeout: 120000 }),
 };
+
+export const reportsAPI = {
+  giving: p        => api.get('/api/reports/giving', { params: p }),
+  member: (id, p)  => api.get(`/api/reports/member/${id}`, { params: p }),
+};
