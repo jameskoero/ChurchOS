@@ -532,6 +532,9 @@ class Invoice(db.Model):
     created_by   = db.Column(db.Integer)
     paid_by      = db.Column(db.Integer)
     paid_at      = db.Column(db.DateTime)
+    claim_method    = db.Column(db.String(10))
+    claim_reference = db.Column(db.String(40))
+    claimed_at      = db.Column(db.DateTime)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     def to_dict(self):
@@ -542,4 +545,16 @@ class Invoice(db.Model):
             'amount': float(self.amount), 'status': self.status, 'method': self.method,
             'reference': self.reference, 'period_start': iso(self.period_start),
             'period_end': iso(self.period_end), 'paid_at': iso(self.paid_at), 'created_at': iso(self.created_at),
+            'claim_method': self.claim_method, 'claim_reference': self.claim_reference,
+            'claimed_at': iso(self.claimed_at),
         }
+
+
+class PlatformSetting(db.Model):
+    """The platform owner's own settings, such as where churches pay ChurchOS. Never church data."""
+    __tablename__ = 'platform_settings'
+    id         = db.Column(db.Integer, primary_key=True)
+    key        = db.Column(db.String(60), unique=True, nullable=False)
+    value      = db.Column(db.String(500))
+    updated_by = db.Column(db.Integer)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)

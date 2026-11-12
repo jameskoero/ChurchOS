@@ -107,6 +107,7 @@ def _status_body(church):
         'paid_until': _iso(church.paid_until),
         'invoices_due': [i.to_dict() for i in due],
         'pay_instructions': os.environ.get('BILLING_INSTRUCTIONS', '').strip(),
+        'billing_code': billing_code(church.id),
     }
 
 
@@ -255,3 +256,181 @@ def revenue():
         'due_total': round(sum(float(i.amount) for i in Invoice.query.filter_by(status='due').all()), 2),
         'churches_by_state': dict(states),
     }), 200
+
+
+# ---- Fix Pack 18: where churches pay ChurchOS (kept apart from every church's own accounts) ----
+import re as _re
+
+from models import PlatformSetting
+from services import statement as _statement
+
+SETTING_KEYS = {'business_name': 80, 'paybill': 10, 'till': 10, 'bank_name': 80,
+                'bank_account': 30, 'bank_branch': 80, 'notes': 300}
+DIGIT_KEYS = ('paybill', 'till')
+BILLING_CODE = _re.compile(r'\bCOS-(\d{4,})\b', _re.IGNORECASE)
+CLAIM_REF = _re.compile(r'[A-Za-z0-9\-]{6,40}')
+
+
+def billing_code(church_id):
+    """A church's permanent account number when paying ChurchOS, for example COS-0002."""
+    return 'COS-%04d' % church_id
+
+
+def _settings():
+    rows = {r.key: r.value for r in PlatformSetting.query.filter(PlatformSetting.key.like('billing.%')).all()}
+    return {key: rows.get('billing.' + key) or '' for key in SETTING_KEYS}
+
+
+@billing_bp.route('/settings', methods=['GET'])
+@jwt_required()
+def get_settings():
+    blocked = _owner_only()
+    if blocked:
+        return blocked
+    return jsonify(_settings()), 200
+
+
+@billing_bp.route('/settings', methods=['PUT'])
+@jwt_required()
+def put_settings():
+    blocked = _owner_only()
+    if blocked:
+        return blocked
+    data = request.get_json(silent=True) or {}
+    clean = {}
+    for key, limit in SETTING_KEYS.items():
+        if key not in data:
+            continue
+        value = str(data.get(key) or '').strip()[:limit]
+        if key in DIGIT_KEYS and value and not _re.fullmatch(r'\d{4,10}', value):
+            return jsonify({'error': 'The %s number must be 4 to 10 digits'
+                                     % ('Paybill' if key == 'paybill' else 'Till')}), 400
+        clean[key] = value
+    for key, value in clean.items():
+        row = PlatformSetting.query.filter_by(key='billing.' + key).first()
+        if row is None:
+            row = PlatformSetting(key='billing.' + key)
+            db.session.add(row)
+        row.value = value
+        row.updated_by = int(get_jwt_identity())
+        row.updated_at = datetime.utcnow()
+    # The log records which fields changed, never their values.
+    audit('billing.settings', 'platform_setting', None,
+          after={k: ('set' if v else 'cleared') for k, v in clean.items()})
+    db.session.commit()
+    return jsonify(_settings()), 200
+
+
+def pay_methods(church, amount=None):
+    s = _settings()
+    code = billing_code(church.id)
+    amt = 'KES {:,}'.format(int(amount)) if amount else 'the amount on your invoice'
+    methods = []
+    if s['paybill']:
+        methods.append({'kind': 'paybill', 'title': 'M-Pesa Paybill (recommended)',
+                        'business_no': s['paybill'], 'account': code, 'steps': [
+                            'Open M-PESA, then Lipa na M-PESA, then Pay Bill.',
+                            'Business number: %s' % s['paybill'],
+                            'Account number: %s (your church billing code)' % code,
+                            'Amount: %s' % amt,
+                            'Enter your M-PESA PIN and send.',
+                            'Then tap I have paid and enter the M-Pesa code from the SMS.']})
+    if s['till']:
+        methods.append({'kind': 'till', 'title': 'M-Pesa Till (Buy Goods)', 'till_no': s['till'], 'steps': [
+            'Open M-PESA, then Lipa na M-PESA, then Buy Goods and Services.',
+            'Till number: %s' % s['till'],
+            'Amount: %s' % amt,
+            'Enter your M-PESA PIN and send.',
+            'Buy Goods has no account number, so tap I have paid and enter the M-Pesa code. '
+            'That code is how your payment is matched.']})
+    if s['bank_name'] and s['bank_account']:
+        methods.append({'kind': 'bank', 'title': 'Bank transfer', 'reference': code, 'steps': [
+            'Bank: %s%s' % (s['bank_name'], (', ' + s['bank_branch']) if s['bank_branch'] else ''),
+            'Account name: %s' % (s['business_name'] or 'ChurchOS'),
+            'Account number: %s' % s['bank_account'],
+            'Reference: %s (your church billing code)' % code,
+            'Amount: %s' % amt,
+            'Then tap I have paid and enter the bank reference.']})
+    return {'configured': bool(methods), 'business_name': s['business_name'] or 'ChurchOS',
+            'billing_code': code, 'methods': methods, 'notes': s['notes']}
+
+
+@billing_bp.route('/pay-to', methods=['GET'])
+@jwt_required()
+@roles_required('admin')
+def pay_to():
+    church = db.session.get(Church, current_church_id())
+    if church is None:
+        return jsonify({'error': 'Not found', 'code': 'NOT_FOUND'}), 404
+    due = Invoice.query.filter_by(church_id=church.id, status='due').order_by(Invoice.id).first()
+    return jsonify(pay_methods(church, due.amount if due else None)), 200
+
+
+@billing_bp.route('/invoices/<int:invoice_id>/claim', methods=['POST'])
+@jwt_required()
+@roles_required('admin')
+def claim_paid(invoice_id):
+    """A church admin says they have paid, with the M-Pesa or bank reference, for the owner to confirm."""
+    invoice = db.session.get(Invoice, invoice_id)
+    if invoice is None or invoice.church_id != current_church_id():
+        return jsonify({'error': 'Not found', 'code': 'NOT_FOUND'}), 404
+    if invoice.status != 'due':
+        return jsonify({'error': 'This invoice is already settled', 'code': 'HANDLED'}), 409
+    data = request.get_json(silent=True) or {}
+    method = data.get('method') if data.get('method') in ('mpesa', 'bank') else None
+    reference = str(data.get('reference') or '').strip()
+    if method is None or not CLAIM_REF.fullmatch(reference):
+        return jsonify({'error': 'Choose M-Pesa or bank and enter the payment code (6 to 40 letters or digits)'}), 400
+    invoice.claim_method, invoice.claim_reference, invoice.claimed_at = method, reference.upper(), datetime.utcnow()
+    audit('invoice.claim', 'invoice', invoice.id, church_id=invoice.church_id,
+          after={'method': method, 'reference': invoice.claim_reference})
+    db.session.commit()
+    return jsonify(invoice.to_dict()), 200
+
+
+def _settle(invoice, method, reference):
+    church = db.session.get(Church, invoice.church_id)
+    now = datetime.utcnow()
+    start = church.paid_until if church.paid_until and church.paid_until > now else now
+    end = start + timedelta(days=PERIOD_DAYS * invoice.months)
+    invoice.status, invoice.method, invoice.reference = 'paid', method, reference
+    invoice.paid_at, invoice.paid_by = now, int(get_jwt_identity())
+    invoice.period_start, invoice.period_end = start, end
+    church.paid_until, church.subscription_plan = end, invoice.plan
+    audit('invoice.paid', 'invoice', invoice.id, church_id=church.id,
+          after={'method': method, 'reference': reference, 'paid_until': end.isoformat(), 'source': 'statement'})
+
+
+@billing_bp.route('/import-statement', methods=['POST'])
+@jwt_required()
+def import_business_statement():
+    """Owner uploads the ChurchOS business statement; payments carrying a billing code settle invoices."""
+    blocked = _owner_only()
+    if blocked:
+        return blocked
+    text = (request.get_json(silent=True) or {}).get('csv')
+    if not isinstance(text, str) or not text.strip():
+        return jsonify({'error': 'No statement text received'}), 400
+    try:
+        rows, skipped = _statement.parse(text)
+    except _statement.StatementError as err:
+        return jsonify({'error': str(err)}), 400
+    counts = {'matched': 0, 'unmatched': 0, 'duplicates': 0, 'skipped': skipped}
+    for r in rows:
+        ref = r['reference'][:40]
+        if Invoice.query.filter_by(reference=ref, status='paid').first() is not None:
+            counts['duplicates'] += 1
+            continue
+        found = BILLING_CODE.search('%s %s' % (r['details'], r['reference']))
+        church = db.session.get(Church, int(found.group(1))) if found else None
+        due = (Invoice.query.filter_by(church_id=church.id, status='due').order_by(Invoice.id).all()
+               if church is not None else [])
+        target = next((i for i in due if Decimal(str(i.amount)) <= r['amount']), None)
+        if target is None:
+            counts['unmatched'] += 1
+            continue
+        method = 'mpesa' if _re.fullmatch(r'[A-Z0-9]{10}', ref) else 'bank'
+        _settle(target, method, ref)
+        counts['matched'] += 1
+    db.session.commit()
+    return jsonify(counts), 200
