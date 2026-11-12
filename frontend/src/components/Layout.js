@@ -32,6 +32,7 @@ const NAV = [
   { path: '/', label: 'Dashboard', icon: 'grid', exact: true },
   { path: '/members', label: 'Members', icon: 'people' },
   { path: '/attendance', label: 'Attendance', icon: 'check' },
+  { path: '/checkin', label: 'Check-in', icon: 'check', only: ['admin', 'pastor', 'secretary'] },
   { path: '/finance', label: 'Finance', icon: 'coins', requiredRole: 'treasurer' },
   { path: '/payments', label: 'Payments', icon: 'phone', only: ['admin', 'treasurer'] },
   { path: '/reports', label: 'Reports', icon: 'report', requiredRole: 'treasurer' },

@@ -200,3 +200,8 @@ export const billingAPI = {
   saveSettings:  d       => api.put('/api/billing/settings', d),
   importStatement: d     => api.post('/api/billing/import-statement', d, { timeout: 120000 }),
 };
+
+export const checkinAPI = {
+  roster: p => api.get('/api/checkin/roster', { params: p }),
+  sync:   d => api.post('/api/checkin/sync', d, { timeout: 120000 }),
+};
