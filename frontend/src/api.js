@@ -194,4 +194,9 @@ export const billingAPI = {
   markPaid:      (id, d) => api.post(`/api/billing/invoices/${id}/paid`, d),
   voidInvoice:   id      => api.post(`/api/billing/invoices/${id}/void`),
   revenue:       ()      => api.get('/api/billing/revenue'),
+  payTo:         ()      => api.get('/api/billing/pay-to'),
+  claim:         (id, d) => api.post(`/api/billing/invoices/${id}/claim`, d),
+  settings:      ()      => api.get('/api/billing/settings'),
+  saveSettings:  d       => api.put('/api/billing/settings', d),
+  importStatement: d     => api.post('/api/billing/import-statement', d, { timeout: 120000 }),
 };
