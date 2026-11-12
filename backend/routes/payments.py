@@ -76,14 +76,14 @@ def _already_recorded(church_id, mpesa_ref):
         live_money()).first() is not None
 
 
-def _post_money(church_id, member_id, amount, tx_type, mpesa_ref, user_id, note):
+def _post_money(church_id, member_id, amount, tx_type, mpesa_ref, user_id, note, when=None):
     """Create the ledger row for a confirmed payment. None if already recorded."""
     if _already_recorded(church_id, mpesa_ref):
         return None
     row = Finance(
         church_id=church_id, reference=_new_reference(), transaction_type=tx_type,
         category='M-Pesa', amount=amount, currency='KES', member_id=member_id,
-        payment_method='mpesa', mpesa_ref=mpesa_ref, transaction_date=date.today(),
+        payment_method='mpesa', mpesa_ref=mpesa_ref, transaction_date=when or date.today(),
         recorded_by=user_id, verified=False, status='posted', notes=note)
     db.session.add(row)
     db.session.flush()

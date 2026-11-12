@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { membersAPI, paymentsAPI } from '../api';
+import { accountsAPI, membersAPI, paymentsAPI } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import './dashboard.css';
 
@@ -205,6 +205,123 @@ function Inbox() {
   );
 }
 
+const KINDS = [
+  ['bank_paybill', 'Bank Paybill or bank till (for example Lipa na KCB)'],
+  ['safaricom_paybill', 'Safaricom Paybill'],
+  ['safaricom_till', 'Safaricom Till (Buy Goods)'],
+  ['bank_account', 'Bank account only'],
+];
+
+function Accounts() {
+  const { user } = useAuth();
+  const blank = { kind: 'bank_paybill', label: '', business_no: '', account_no: '', bank_name: '', instructions: '' };
+  const [rows, setRows] = useState([]);
+  const [form, setForm] = useState(blank);
+  const [error, setError] = useState('');
+  const load = useCallback(() => {
+    accountsAPI.list().then(r => setRows(r.data.accounts || [])).catch(() => setRows([]));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  const isAdmin = user?.role === 'admin';
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const save = async e => {
+    e.preventDefault();
+    setError('');
+    try {
+      await accountsAPI.create(form);
+      setForm(blank);
+      load();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not save. Try again.');
+    }
+  };
+  const remove = async id => { try { await accountsAPI.remove(id); load(); } catch (err) { setError('Could not remove it.'); } };
+
+  return (
+    <section className="cd-card" style={{ marginBottom: '0.9rem' }} aria-labelledby="acc-h">
+      <h2 className="cd-h" id="acc-h">Where this church receives money</h2>
+      <p className="cd-hint">Members pay these. ChurchOS matches what arrives by member number.</p>
+      {rows.length === 0 && <p className="cd-empty">No account saved yet.</p>}
+      <ul className="cd-list">
+        {rows.map(a => (
+          <li key={a.id} className="cd-item" style={{ alignItems: 'flex-start' }}>
+            <span>
+              <b>{a.label}</b><br />
+              {a.business_no && <span>Business no. {a.business_no}</span>}
+              {a.account_no && <span> · Account {a.account_no}</span>}
+              {a.bank_name && <span> · {a.bank_name}</span>}
+              {a.instructions && <><br /><span style={{ color: 'var(--gray-600)' }}>{a.instructions}</span></>}
+            </span>
+            {isAdmin && <button type="button" className="cd-call" onClick={() => remove(a.id)}>Remove</button>}
+          </li>
+        ))}
+      </ul>
+      {isAdmin && (
+        <form onSubmit={save} style={{ display: 'grid', gap: '0.6rem', marginTop: '1rem' }}>
+          <select className="form-control" value={form.kind} onChange={e => set('kind', e.target.value)} aria-label="Kind of account">
+            {KINDS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <input className="form-control" placeholder="Name, for example Migosi tithes" value={form.label} onChange={e => set('label', e.target.value)} required />
+          <input className="form-control" inputMode="numeric" placeholder="Business or Till number" value={form.business_no} onChange={e => set('business_no', e.target.value)} />
+          <input className="form-control" placeholder="Account number (what members type)" value={form.account_no} onChange={e => set('account_no', e.target.value)} />
+          <input className="form-control" placeholder="Bank name (optional)" value={form.bank_name} onChange={e => set('bank_name', e.target.value)} />
+          <input className="form-control" placeholder="Instructions for members (optional)" value={form.instructions} onChange={e => set('instructions', e.target.value)} />
+          {error && <div className="cd-err" role="alert"><span>{error}</span></div>}
+          <button className="cd-act alt" type="submit">Save account</button>
+        </form>
+      )}
+    </section>
+  );
+}
+
+function ImportStatement() {
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const pick = e => {
+    const input = e.target;
+    const file = input.files && input.files[0];
+    if (!file) return;
+    setError('');
+    setResult(null);
+    setBusy(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const res = await accountsAPI.importStatement({ csv: String(reader.result) });
+        setResult(res.data);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Could not read that file.');
+      } finally {
+        setBusy(false);
+        input.value = '';
+      }
+    };
+    reader.onerror = () => { setError('Could not open the file.'); setBusy(false); };
+    reader.readAsText(file);
+  };
+
+  return (
+    <section className="cd-card" style={{ marginBottom: '0.9rem' }} aria-labelledby="imp-h">
+      <h2 className="cd-h" id="imp-h">Import a statement</h2>
+      <p className="cd-hint">Upload your bank or M-Pesa statement as a CSV file. Payments with a member number or phone number in the details are recorded; the rest wait in the inbox below. Importing the same file twice records nothing twice.</p>
+      <input type="file" accept=".csv,text/csv,text/plain" onChange={pick} disabled={busy} aria-label="Statement file" />
+      {busy && <p className="cd-hint">Reading the statement…</p>}
+      {error && <div className="cd-err" role="alert" style={{ marginTop: '0.6rem' }}><span>{error}</span></div>}
+      {result && (
+        <div className="cd-item" style={{ marginTop: '0.8rem' }} role="status">
+          <span>
+            <b>{result.imported}</b> new · <b>{result.matched}</b> matched to members · <b>{result.unmatched}</b> waiting in the inbox ·
+            {' '}{result.duplicates} already recorded · {result.skipped} skipped (not money in)
+          </span>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function SetupCheck() {
   const { user } = useAuth();
   const [status, setStatus] = useState(null);
@@ -271,6 +388,8 @@ export default function Payments() {
         </div>
       </div>
       <SetupCheck />
+      <Accounts />
+      <ImportStatement />
       <div className="cd-grid even">
         <AskForPayment />
         <Inbox />
