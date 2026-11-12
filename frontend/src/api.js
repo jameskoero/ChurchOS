@@ -172,3 +172,10 @@ export const insightsAPI = {
 export const healthAPI = {
   check: () => api.get('/api/health', { timeout: 60000 }),
 };
+
+export const accountsAPI = {
+  list:            ()      => api.get('/api/accounts/'),
+  create:          d       => api.post('/api/accounts/', d),
+  remove:          id      => api.delete(`/api/accounts/${id}`),
+  importStatement: d       => api.post('/api/accounts/import-statement', d, { timeout: 120000 }),
+};

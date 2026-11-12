@@ -491,3 +491,25 @@ class PaymentEvent(db.Model):
             'member_id': self.member_id, 'finance_id': self.finance_id, 'note': self.note,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class PaymentAccount(db.Model):
+    """Where a church receives money: its own Paybill, Till, bank paybill or bank account."""
+    __tablename__ = 'payment_accounts'
+    id           = db.Column(db.Integer, primary_key=True)
+    church_id    = db.Column(db.Integer, db.ForeignKey('churches.id'), index=True, nullable=False)
+    kind         = db.Column(db.String(20), nullable=False)
+    label        = db.Column(db.String(120), nullable=False)
+    business_no  = db.Column(db.String(12))
+    account_no   = db.Column(db.String(40))
+    bank_name    = db.Column(db.String(80))
+    instructions = db.Column(db.String(500))
+    is_active    = db.Column(db.Boolean, default=True)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'kind': self.kind, 'label': self.label,
+            'business_no': self.business_no, 'account_no': self.account_no,
+            'bank_name': self.bank_name, 'instructions': self.instructions,
+        }
