@@ -1,0 +1,18 @@
+.ck-status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 16px;
+  background: #E1F3EC; color: #0B5A41; font-weight: 700; margin-bottom: 12px; }
+.ck-status.off { background: #FFF4C2; color: #5C4700; }
+.ck-status i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #12805C; margin-right: 8px; }
+.ck-status.off i { background: #D92D20; }
+.ck-status button { margin-left: auto; min-height: 40px; padding: 0 16px; }
+.ck-controls { display: grid; gap: 8px; margin-bottom: 8px; }
+@media (min-width: 700px) { .ck-controls { grid-template-columns: 1fr 180px 1.4fr; } }
+.ck-row { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 8px 14px; border-radius: 16px;
+  border: 2px solid var(--gray-200); background: #FFFFFF; color: #0C1445; cursor: pointer; text-align: left; font-family: inherit; }
+.ck-row.on { background: #E1F3EC; border-color: #12805C; }
+.ck-row:disabled { cursor: default; }
+.ck-box { width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #0C1445; display: inline-flex; align-items: center;
+  justify-content: center; font-weight: 900; color: #FFFFFF; flex: none; }
+.ck-row.on .ck-box { background: #12805C; border-color: #12805C; }
+.ck-name { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ck-name span { color: var(--gray-600); font-size: 0.82rem; }
+.ck-tag { font-size: 0.78rem; font-weight: 700; color: #0B5A41; }

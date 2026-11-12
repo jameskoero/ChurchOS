@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../api';
+import { clearRoster } from '../lib/offlineStore';
 
 const AuthContext = createContext(null);
 
@@ -32,6 +33,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     authAPI.logout();
+    clearRoster();   // the saved member list must not stay on a phone after sign-out
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
