@@ -146,6 +146,7 @@ class Church(db.Model):
     member_prefix     = db.Column(db.String(10), default='CHR')
     subscription_plan = db.Column(db.String(20), default='trial')
     trial_ends_at     = db.Column(db.DateTime)
+    paid_until        = db.Column(db.DateTime)
     is_active         = db.Column(db.Boolean, default=True)
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at        = db.Column(db.DateTime, default=datetime.utcnow,
@@ -512,4 +513,33 @@ class PaymentAccount(db.Model):
             'id': self.id, 'kind': self.kind, 'label': self.label,
             'business_no': self.business_no, 'account_no': self.account_no,
             'bank_name': self.bank_name, 'instructions': self.instructions,
+        }
+
+
+class Invoice(db.Model):
+    """A subscription invoice the platform owner issues and confirms."""
+    __tablename__ = 'invoices'
+    id           = db.Column(db.Integer, primary_key=True)
+    church_id    = db.Column(db.Integer, db.ForeignKey('churches.id'), index=True, nullable=False)
+    plan         = db.Column(db.String(20), nullable=False)
+    months       = db.Column(db.Integer, nullable=False, default=1)
+    amount       = db.Column(db.Numeric(12, 2), nullable=False)
+    status       = db.Column(db.String(10), default='due', index=True)
+    method       = db.Column(db.String(10))
+    reference    = db.Column(db.String(40))
+    period_start = db.Column(db.DateTime)
+    period_end   = db.Column(db.DateTime)
+    created_by   = db.Column(db.Integer)
+    paid_by      = db.Column(db.Integer)
+    paid_at      = db.Column(db.DateTime)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        def iso(v):
+            return v.isoformat() if v else None
+        return {
+            'id': self.id, 'church_id': self.church_id, 'plan': self.plan, 'months': self.months,
+            'amount': float(self.amount), 'status': self.status, 'method': self.method,
+            'reference': self.reference, 'period_start': iso(self.period_start),
+            'period_end': iso(self.period_end), 'paid_at': iso(self.paid_at), 'created_at': iso(self.created_at),
         }

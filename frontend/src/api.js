@@ -184,3 +184,14 @@ export const reportsAPI = {
   giving: p        => api.get('/api/reports/giving', { params: p }),
   member: (id, p)  => api.get(`/api/reports/member/${id}`, { params: p }),
 };
+
+export const billingAPI = {
+  status:        ()      => api.get('/api/billing/status'),
+  plans:         ()      => api.get('/api/billing/plans'),
+  churches:      ()      => api.get('/api/billing/churches'),
+  invoices:      p       => api.get('/api/billing/invoices', { params: p }),
+  createInvoice: d       => api.post('/api/billing/invoices', d),
+  markPaid:      (id, d) => api.post(`/api/billing/invoices/${id}/paid`, d),
+  voidInvoice:   id      => api.post(`/api/billing/invoices/${id}/void`),
+  revenue:       ()      => api.get('/api/billing/revenue'),
+};

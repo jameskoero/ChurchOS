@@ -19,6 +19,7 @@ ADDITIONS = [
     ('members', 'consent_at', 'TIMESTAMP'),
     ('members', 'consent_version', 'VARCHAR(20)'),
     ('members', 'erased_at', 'TIMESTAMP'),
+    ('churches', 'paid_until', 'TIMESTAMP'),
 ]
 
 

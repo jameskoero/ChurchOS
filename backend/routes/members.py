@@ -83,6 +83,11 @@ def create_member():
         if not data.get(field):
             return jsonify({'error': f'{field} is required'}), 400
 
+    from routes.billing import limit_problem
+    problem = limit_problem(current_church_id())
+    if problem:
+        return jsonify({'error': problem, 'code': 'PLAN_LIMIT'}), 402
+
     from datetime import date
     member = Member(
         church_id=current_church_id(),
