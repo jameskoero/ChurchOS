@@ -10,7 +10,7 @@ from sqlalchemy import or_
 
 from extensions import limiter
 from ledger import audit
-from models import db, Church, Member, SmsMessage
+from models import db, Church, Member, SmsMessage, SmsOptOut
 from routes.payments import normalize_phone
 from services import sms
 from tenancy import current_church_id, scoped, owned_or_404, roles_required
@@ -20,6 +20,8 @@ sms_bp = Blueprint('sms', __name__)
 STAFF = ('admin', 'pastor', 'secretary')
 MAX_RECIPIENTS = 300
 MAX_PERSONAL = 40
+MAX_TYPED = 20
+PIECES = re.compile(r'[,;\n]+')
 CHUNK = 100
 STOP_WORDS = ('STOP', 'UNSUBSCRIBE', 'OPTOUT', 'CANCEL')
 
@@ -53,20 +55,51 @@ def _limit(church):
     return sms.MONTHLY_PARTS.get(church.subscription_plan or 'trial', sms.MONTHLY_PARTS['trial'])
 
 
+def _opted_out(phones):
+    """Which of these numbers (2547..., no plus) replied STOP."""
+    phones = {p for p in phones if p}
+    if not phones:
+        return set()
+    return {r.phone for r in SmsOptOut.query.filter(SmsOptOut.phone.in_(list(phones))).all()}
+
+
 def _recipients(church_id, audience, member_ids):
     query = scoped(Member).filter(Member.membership_status == 'active', Member.erased_at.is_(None),
                                   Member.sms_ok.is_(True))
     if audience == 'selected':
         query = query.filter(Member.id.in_(list(member_ids) or [0]))
+    candidates = [(m, normalize_phone(m.phone)) for m in query.order_by(Member.id).all()]
+    blocked = _opted_out({p for _, p in candidates})
     seen, out, no_phone = set(), [], 0
-    for member in query.order_by(Member.id).all():
-        phone = normalize_phone(member.phone)
+    for member, phone in candidates:
         if not phone:
             no_phone += 1
-        elif phone not in seen:
+        elif phone in blocked or phone in seen:
+            continue
+        else:
             seen.add(phone)
             out.append((member, '+' + phone))
     return out, no_phone
+
+
+def _typed(raw):
+    """Numbers keyed in by hand. Returns (people, unreadable entries, how many replied STOP)."""
+    pieces = raw if isinstance(raw, list) else PIECES.split(str(raw or ''))
+    valid, bad, seen = [], [], set()
+    for piece in [str(p).strip() for p in pieces][:100]:
+        if not piece:
+            continue
+        tokens = [piece] if (normalize_phone(piece) or len(piece.split()) < 2) else piece.split()
+        for token in tokens:
+            got = normalize_phone(token)
+            if got is None:
+                bad.append(token[:20])
+            elif got not in seen:
+                seen.add(got)
+                valid.append(got)
+    blocked = _opted_out(set(valid))
+    people = [(None, '+' + p) for p in valid if p not in blocked]
+    return people, bad[:10], len(valid) - len(people)
 
 
 def _plan(data):
@@ -75,24 +108,41 @@ def _plan(data):
     if not text:
         return None, (jsonify({'error': 'Write a message first'}), 400)
     audience = data.get('audience')
-    if audience not in ('all', 'selected'):
+    if audience not in ('all', 'selected', 'numbers'):
         return None, (jsonify({'error': 'Choose who should receive it'}), 400)
-    ids = data.get('member_ids') if isinstance(data.get('member_ids'), list) else []
-    ids = [i for i in ids if isinstance(i, int)][:2000]
-    if audience == 'selected' and not ids:
-        return None, (jsonify({'error': 'Choose at least one member'}), 400)
-    people, no_phone = _recipients(current_church_id(), audience, ids)
     personal = '{first_name}' in text
-    if not people:
-        return None, (jsonify({'error': 'Nobody to send to. Members must have a valid phone number and have '
-                                         'agreed to SMS.', 'code': 'NO_RECIPIENTS'}), 400)
+    invalid, opted_out = [], 0
+    if audience == 'numbers':
+        if personal:
+            return None, (jsonify({'error': 'Typed numbers have no names. Remove {first_name} from the message.',
+                                   'code': 'NO_NAMES'}), 400)
+        if data.get('asked') is not True:
+            return None, (jsonify({'error': 'Tick the box to confirm these people asked to receive your message.',
+                                   'code': 'NEEDS_CONFIRMATION'}), 400)
+        people, invalid, opted_out = _typed(data.get('numbers'))
+        no_phone = 0
+        if not people:
+            return None, (jsonify({'error': 'No valid number to send to. Use Kenyan numbers like 0712 345 678.'
+                                            + (' Some numbers replied STOP and are blocked.' if opted_out else ''),
+                                   'code': 'NO_RECIPIENTS', 'invalid_numbers': invalid}), 400)
+        if len(people) > MAX_TYPED:
+            return None, (jsonify({'error': 'Type at most %d numbers at a time' % MAX_TYPED, 'code': 'TOO_MANY'}), 400)
+    else:
+        ids = data.get('member_ids') if isinstance(data.get('member_ids'), list) else []
+        ids = [i for i in ids if isinstance(i, int)][:2000]
+        if audience == 'selected' and not ids:
+            return None, (jsonify({'error': 'Choose at least one member'}), 400)
+        people, no_phone = _recipients(current_church_id(), audience, ids)
+        if not people:
+            return None, (jsonify({'error': 'Nobody to send to. Members must have a valid phone number and have '
+                                            'agreed to SMS.', 'code': 'NO_RECIPIENTS'}), 400)
     if len(people) > MAX_RECIPIENTS or (personal and len(people) > MAX_PERSONAL):
         limit = MAX_PERSONAL if personal else MAX_RECIPIENTS
         return None, (jsonify({'error': 'Send to at most %d members at a time%s' % (
             limit, ' (remove {first_name} to send to more)' if personal else ''), 'code': 'TOO_MANY'}), 400)
     items = []
     for member, phone in people:
-        body = text.replace('{first_name}', (member.first_name or '').strip()[:30]) if personal else text
+        body = text.replace('{first_name}', (member.first_name or '').strip()[:30]) if personal and member else text
         if sms.parts(body) > sms.MAX_PARTS:
             return None, (jsonify({'error': 'That message is longer than %d SMS parts. Shorten it.' % sms.MAX_PARTS,
                                    'code': 'TOO_LONG'}), 400)
@@ -101,7 +151,8 @@ def _plan(data):
     used, limit_total = _used(church.id), _limit(church)
     need = sum(i['parts'] for i in items)
     return {'items': items, 'personal': personal, 'need': need, 'used': used, 'limit': limit_total,
-            'no_phone': no_phone, 'text': text}, None
+            'no_phone': no_phone, 'text': text, 'invalid': invalid, 'opted_out': opted_out,
+            'typed': audience == 'numbers'}, None
 
 
 @sms_bp.route('/setup', methods=['GET'])
@@ -119,10 +170,10 @@ def audience():
     q = request.args.get('search', '').strip()[:60]
     base = scoped(Member).filter(Member.membership_status == 'active', Member.erased_at.is_(None))
     query = base
-    if q:
-        like = '%' + q + '%'
-        query = base.filter(or_(Member.first_name.ilike(like), Member.last_name.ilike(like),
-                                Member.member_id.ilike(like)))
+    for word in q.split()[:4]:
+        like = '%' + word + '%'
+        query = query.filter(or_(Member.first_name.ilike(like), Member.last_name.ilike(like),
+                                 Member.member_id.ilike(like)))
     rows = query.order_by(Member.first_name, Member.last_name).limit(50).all()
     agreed = base.filter(Member.sms_ok.is_(True)).count()
     return jsonify({
@@ -144,6 +195,8 @@ def consent():
     if agreed and normalize_phone(member.phone) is None:
         return jsonify({'error': 'Add a valid Kenyan phone number to this member first', 'code': 'NO_PHONE'}), 400
     member.sms_ok, member.sms_ok_at = agreed, (datetime.utcnow() if agreed else None)
+    if agreed:
+        SmsOptOut.query.filter_by(phone=normalize_phone(member.phone)).delete()
     audit('sms.consent', 'member', member.id, after={'agreed': agreed})
     db.session.commit()
     return jsonify({'id': member.id, 'sms_ok': agreed}), 200
@@ -160,6 +213,7 @@ def preview():
                     'total_parts': plan['need'], 'used': plan['used'], 'limit': plan['limit'],
                     'remaining_after': plan['limit'] - plan['used'] - plan['need'],
                     'skipped_no_phone': plan['no_phone'], 'personalised': plan['personal'],
+                    'invalid_numbers': plan['invalid'], 'opted_out': plan['opted_out'], 'typed': plan['typed'],
                     'sample': plan['items'][0]['body']}), 200
 
 
@@ -197,14 +251,14 @@ def send():
         for item in group:
             r = by_phone.get(item['phone']) or {'status': 'failed', 'detail': 'No result for this number',
                                                 'message_id': '', 'cost': ''}
-            db.session.add(SmsMessage(church_id=church_id, member_id=item['member'].id, batch_id=batch,
+            db.session.add(SmsMessage(church_id=church_id, member_id=item['member'].id if item['member'] else None, batch_id=batch,
                                       phone=item['phone'], body=item['body'][:480], status=r['status'],
                                       provider_id=r.get('message_id') or None, detail=r.get('detail') or None,
                                       segments=item['parts'], cost=r.get('cost') or None, created_by=user_id))
             accepted, failed = (accepted + 1, failed) if r['status'] == 'sent' else (accepted, failed + 1)
         db.session.commit()
     audit('sms.send', 'sms', None, after={'batch': batch, 'recipients': len(items), 'accepted': accepted,
-                                          'failed': failed, 'parts': plan['need']})
+                                          'failed': failed, 'parts': plan['need'], 'typed_numbers': plan['typed']})
     db.session.commit()
     return jsonify({'batch_id': batch, 'accepted': accepted, 'failed': failed, 'parts': plan['need'],
                     'remaining': plan['limit'] - _used(church_id)}), 200
@@ -256,6 +310,8 @@ def inbound(secret):
     words = _field('text').upper().split()
     phone = normalize_phone(_field('from'))
     if phone and words and words[0] in STOP_WORDS:
+        if SmsOptOut.query.filter_by(phone=phone).first() is None:
+            db.session.add(SmsOptOut(phone=phone))
         rows = Member.query.filter(Member.sms_ok.is_(True), Member.phone.isnot(None)).limit(50000).all()
         changed = [m for m in rows if normalize_phone(m.phone) == phone]
         for member in changed:
