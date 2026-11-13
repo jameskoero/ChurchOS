@@ -16,6 +16,8 @@ import Reports from './pages/Reports';
 import Billing from './pages/Billing';
 import CheckIn from './pages/CheckIn';
 import Messages from './pages/Messages';
+import Structure from './pages/Structure';
+import Region from './pages/Region';
 function ProtectedRoute({children,requiredRole}) {
   const {user,loading} = useAuth();
   if (loading) return <div style={{display:'flex',alignItems:'center',
@@ -59,6 +61,8 @@ export default function App() {
           <Route path='billing' element={<Billing/>}/>
           <Route path='checkin' element={<CheckIn/>}/>
           <Route path='messages' element={<Messages/>}/>
+          <Route path='structure' element={<Structure/>}/>
+          <Route path='region' element={<Region/>}/>
           <Route path='profile' element={<Profile/>}/>
         </Route>
         <Route path='*' element={<Navigate to='/' replace/>}/>

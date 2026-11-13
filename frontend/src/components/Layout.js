@@ -16,6 +16,7 @@ const ICONS = {
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 21c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5',
   report: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7',
   chat: 'M4 5h16v11H9l-5 4zM8 9h8M8 12h5',
+  tree: 'M9 3h6v5H9zM12 8v4M5 12h14M5 12v3M12 12v3M19 12v3M3 15h4v5H3zM10 15h4v5h-4zM17 15h4v5h-4z',
   menu: 'M4 7h16M4 12h16M4 17h16',
   close: 'M6 6l12 12M18 6L6 18',
 };
@@ -42,6 +43,8 @@ const NAV = [
   { path: '/churches', label: 'Churches', icon: 'church', requiredRole: 'admin' },
   { path: '/users', label: 'Users', icon: 'key', requiredRole: 'admin' },
   { path: '/billing', label: 'Billing', icon: 'coins', requiredRole: 'admin' },
+  { path: '/structure', label: 'Structure', icon: 'tree', only: ['admin', 'pastor'] },
+  { path: '/region', label: 'Region', icon: 'tree', requiredRole: 'admin' },
 ];
 const HIERARCHY = { admin: 5, pastor: 4, treasurer: 3, secretary: 2, viewer: 1 };
 

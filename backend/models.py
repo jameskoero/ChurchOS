@@ -147,6 +147,9 @@ class Church(db.Model):
     subscription_plan = db.Column(db.String(20), default='trial')
     trial_ends_at     = db.Column(db.DateTime)
     paid_until        = db.Column(db.DateTime)
+    denomination_id   = db.Column(db.Integer)
+    region_id         = db.Column(db.Integer, index=True)
+    is_seat           = db.Column(db.Boolean, default=False)
     is_active         = db.Column(db.Boolean, default=True)
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at        = db.Column(db.DateTime, default=datetime.utcnow,
@@ -594,3 +597,56 @@ class SmsOptOut(db.Model):
     id         = db.Column(db.Integer, primary_key=True)
     phone      = db.Column(db.String(16), unique=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Denomination(db.Model):
+    """A denomination or ministry, with the words its churches use."""
+    __tablename__ = 'denominations'
+    id                     = db.Column(db.Integer, primary_key=True)
+    name                   = db.Column(db.String(160), unique=True, nullable=False)
+    short_name             = db.Column(db.String(20))
+    status                 = db.Column(db.String(10), default='listed', index=True)
+    region_label           = db.Column(db.String(40), default='Region')
+    unit_label             = db.Column(db.String(40), default='Church')
+    region_leader_title    = db.Column(db.String(40), default='Regional leader')
+    unit_leader_title      = db.Column(db.String(40), default='Pastor')
+    seat_label             = db.Column(db.String(40), default='Headquarters church')
+    requested_by_church_id = db.Column(db.Integer, index=True)
+    created_at             = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def labels(self):
+        return {'region_label': self.region_label, 'unit_label': self.unit_label,
+                'region_leader_title': self.region_leader_title, 'unit_leader_title': self.unit_leader_title,
+                'seat_label': self.seat_label}
+
+    def to_dict(self):
+        return dict({'id': self.id, 'name': self.name, 'short_name': self.short_name, 'status': self.status},
+                    **self.labels())
+
+
+class Region(db.Model):
+    """A group of churches (altars) under one leader, seated at one of them."""
+    __tablename__ = 'regions'
+    id              = db.Column(db.Integer, primary_key=True)
+    name            = db.Column(db.String(120), nullable=False)
+    denomination_id = db.Column(db.Integer, db.ForeignKey('denominations.id'))
+    seat_church_id  = db.Column(db.Integer, db.ForeignKey('churches.id'), unique=True, nullable=False)
+    leader_user_id  = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class RegionInvite(db.Model):
+    """An invitation from a region to a church. Nothing is shared until the church accepts."""
+    __tablename__ = 'region_invites'
+    id           = db.Column(db.Integer, primary_key=True)
+    region_id    = db.Column(db.Integer, db.ForeignKey('regions.id'), index=True, nullable=False)
+    church_id    = db.Column(db.Integer, db.ForeignKey('churches.id'), index=True, nullable=False)
+    status       = db.Column(db.String(10), default='pending', index=True)
+    invited_by   = db.Column(db.Integer)
+    responded_by = db.Column(db.Integer)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    responded_at = db.Column(db.DateTime)
+
+    def to_dict(self):
+        return {'id': self.id, 'region_id': self.region_id, 'church_id': self.church_id, 'status': self.status,
+                'created_at': self.created_at.isoformat() if self.created_at else None}
