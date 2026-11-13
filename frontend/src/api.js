@@ -214,3 +214,19 @@ export const smsAPI = {
   send:     d   => api.post('/api/sms/send', d, { timeout: 120000 }),
   history:  ()  => api.get('/api/sms/history'),
 };
+
+export const governanceAPI = {
+  denominations:       p        => api.get('/api/governance/denominations', { params: p }),
+  requestDenomination: d        => api.post('/api/governance/denominations/request', d),
+  pending:             ()       => api.get('/api/governance/denominations/pending'),
+  review:              (id, d)  => api.put(`/api/governance/denominations/${id}`, d),
+  church:              ()       => api.get('/api/governance/church'),
+  choose:              d        => api.put('/api/governance/church', d),
+  leave:               ()       => api.post('/api/governance/church/leave'),
+  createRegion:        d        => api.post('/api/governance/regions', d),
+  myRegion:            ()       => api.get('/api/governance/regions/mine'),
+  invite:              d        => api.post('/api/governance/regions/mine/invites', d),
+  answer:              (id, a)  => api.post(`/api/governance/invites/${id}/${a}`),
+  removeChurch:        id       => api.post(`/api/governance/regions/mine/churches/${id}/remove`),
+  regionMembers:       (id, p)  => api.get(`/api/governance/regions/mine/churches/${id}/members`, { params: p }),
+};
