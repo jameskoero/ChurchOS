@@ -184,8 +184,8 @@ export default function Users() {
                     <div style={{ position: 'relative' }}>
                       <input className="form-control" type={showPassword ? 'text' : 'password'}
                         value={form.password} onChange={e => set('password', e.target.value)}
-                        required={!editing} minLength={8} style={{ paddingRight: '3rem' }}
-                        placeholder="Min. 8 characters" />
+                        required={!editing} minLength={10} style={{ paddingRight: '3rem' }}
+                        placeholder="At least 10 characters, with letters and numbers" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)}
                         style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)' }}>
                         {showPassword ? '🙈' : '👁'}

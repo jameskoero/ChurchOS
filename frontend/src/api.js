@@ -149,6 +149,7 @@ export const churchesAPI = {
   update:     (id, d)  => api.put(`/api/churches/${id}`, d),
   delete:     id       => api.delete(`/api/churches/${id}`),
   constants:  ()       => api.get('/api/churches/constants'),
+  firstAdmin: (id, d)  => api.post(`/api/churches/${id}/first-admin`, d),
 };
 
 export default api;
