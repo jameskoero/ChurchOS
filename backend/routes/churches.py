@@ -80,6 +80,10 @@ def create_church():
         is_active=True)
     db.session.add(church)
     db.session.flush()
+    problem = _link_denomination(church, data)
+    if problem:
+        db.session.rollback()
+        return problem
 
     admin = None
     if data.get('admin_email') or data.get('admin_username') or data.get('admin_password'):
@@ -156,3 +160,71 @@ def delete_church(cid):
     db.session.delete(church)
     db.session.commit()
     return jsonify({'message': 'Church deleted'}), 200
+
+
+# ---- Fix Pack 23: give a new altar its first admin (its Senior Pastor) ----
+from ledger import audit as _audit
+
+
+@churches_bp.route('/<int:cid>/first-admin', methods=['POST'])
+@jwt_required()
+def first_admin(cid):
+    """Platform owner adds the first admin to a church that has none yet.
+
+    Once a church has an admin, only that church adds its own people: the owner cannot add
+    themselves or anyone else to another church's records."""
+    if not is_owner():
+        return jsonify({'error': 'Only the platform owner can do this', 'code': 'FORBIDDEN'}), 403
+    church = db.session.get(Church, cid)
+    if church is None:
+        return jsonify({'error': 'Not found', 'code': 'NOT_FOUND'}), 404
+    if User.query.filter_by(church_id=church.id, role='admin').first() is not None:
+        return jsonify({'error': 'This church already has an admin. They add their own users.', 'code': 'HAS_ADMIN'}), 409
+    data = _json() or {}
+    username = str(data.get('username') or '').strip()
+    email = str(data.get('email') or '').strip().lower()
+    password = data.get('password') if isinstance(data.get('password'), str) else ''
+    if not username or not email or not password:
+        return jsonify({'error': 'Username, email and password are all required'}), 400
+    if User.query.filter((User.username == username) | (User.email == email)).first():
+        return jsonify({'error': 'That username or email is already in use'}), 409
+    admin = User(church_id=church.id, username=username, email=email,
+                 full_name=str(data.get('full_name') or '').strip()[:150], role='admin', is_active=True)
+    problem = password_problem(admin, password)
+    if problem:
+        return jsonify({'error': problem}), 400
+    admin.set_password(password)
+    db.session.add(admin)
+    db.session.flush()
+    _audit('church.first_admin', 'user', admin.id, church_id=church.id, after={'username': username})
+    db.session.commit()
+    return jsonify({'admin': admin.to_dict(), 'church': church.name}), 201
+
+
+import re as _re
+from sqlalchemy import func as _func
+
+
+def _link_denomination(church, data):
+    """Link a new church to a listed denomination, or record an 'Other' name for approval."""
+    from models import Denomination
+    did = data.get('denomination_id')
+    other = _re.sub(r'\s+', ' ', str(data.get('denomination_other') or '')).strip()
+    if isinstance(did, int) and not isinstance(did, bool):
+        found = db.session.get(Denomination, did)
+        if found is None or found.status not in ('listed', 'verified'):
+            return jsonify({'error': 'Choose a denomination from the list'}), 400
+    elif other:
+        if len(other) < 3 or len(other) > 160:
+            return jsonify({'error': 'Type the full denomination name (3 to 160 characters)'}), 400
+        found = Denomination.query.filter(_func.lower(Denomination.name) == other.lower()).first()
+        if found is not None and found.status == 'rejected':
+            return jsonify({'error': 'That name was not approved. Check the spelling or contact the platform owner.'}), 400
+        if found is None:
+            found = Denomination(name=other, status='pending', requested_by_church_id=church.id)
+            db.session.add(found)
+            db.session.flush()
+    else:
+        return None
+    church.denomination_id, church.denomination = found.id, found.name[:100]
+    return None
