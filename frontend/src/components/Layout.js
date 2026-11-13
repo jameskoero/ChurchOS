@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { billingAPI, churchesAPI } from '../api';
+import { billingAPI, governanceAPI } from '../api';
 import './layout.css';
 
 const ICONS = {
@@ -58,8 +58,8 @@ export default function Layout() {
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
 
   useEffect(() => {
-    churchesAPI.getAll()
-      .then(r => setChurchName(r.data.churches?.[0]?.name || ''))
+    governanceAPI.church()
+      .then(r => setChurchName(r.data.church || ''))
       .catch(() => {});
   }, []);
 
