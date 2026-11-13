@@ -67,7 +67,7 @@ def test_only_members_who_agreed_and_have_a_phone_are_messaged(client, fake):
     nophone = client.post('/api/members/', headers=a, json={'first_name': 'Nophone', 'last_name': 'Test'}).get_json()['id']
     assert client.post('/api/sms/consent', headers=a, json={'member_id': nophone, 'agreed': True}).status_code == 400
     prev = client.post('/api/sms/preview', headers=a, json={'message': 'Service at 9am.', 'audience': 'all'}).get_json()
-    assert prev['recipients'] == 1 and prev['total_parts'] == 1 and 'phone' not in json.dumps(prev)
+    assert prev['recipients'] == 1 and prev['total_parts'] == 1 and '711000111' not in json.dumps(prev)
     aud = client.get('/api/sms/audience', headers=a).get_json()
     assert aud['agreed'] == 2 and all('phone' not in m for m in aud['members'])
     sel = client.post('/api/sms/preview', headers=a, json={'message': 'Hi', 'audience': 'selected', 'member_ids': [yes]})
