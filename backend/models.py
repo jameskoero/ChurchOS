@@ -586,3 +586,11 @@ class SmsMessage(db.Model):
             'status': self.status, 'detail': self.detail, 'segments': self.segments, 'cost': self.cost,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class SmsOptOut(db.Model):
+    """A phone number that replied STOP. It is never messaged until staff record new consent for it."""
+    __tablename__ = 'sms_optouts'
+    id         = db.Column(db.Integer, primary_key=True)
+    phone      = db.Column(db.String(16), unique=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

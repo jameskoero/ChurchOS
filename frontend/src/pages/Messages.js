@@ -50,6 +50,7 @@ function People({ audience, picked, onPick, onChanged }) {
       <p className="cd-hint">{data.agreed} of {data.total} active members agreed. Only tick a member after they have told you they want church messages.</p>
       <input className="form-control" placeholder="Find a member" value={q} onChange={e => find(e.target.value)} aria-label="Find a member" />
       {error && <div className="cd-err" role="alert" style={{ marginTop: '0.5rem' }}><span>{error}</span></div>}
+      {data.members.length === 0 && <p className="cd-empty" style={{ marginTop: '0.6rem' }}>No active member matches that. Try just a first name or a member number.</p>}
       <ul className="cd-list" style={{ marginTop: '0.6rem' }}>
         {data.members.map(m => (
           <li key={m.id} className="cd-item" style={{ gap: '0.6rem', flexWrap: 'wrap' }}>
@@ -73,6 +74,8 @@ export default function Messages() {
   const [audience, setAudience] = useState('all');
   const [picked, setPicked] = useState([]);
   const [message, setMessage] = useState('');
+  const [numbers, setNumbers] = useState('');
+  const [asked, setAsked] = useState(false);
   const [preview, setPreview] = useState(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
@@ -87,7 +90,7 @@ export default function Messages() {
   if (!ALLOWED.includes(user?.role)) {
     return <div className="cd"><p className="cd-empty">Messages are for the admin, pastor and secretary.</p></div>;
   }
-  const body = { message, audience, member_ids: picked };
+  const body = { message, audience, member_ids: picked, numbers, asked };
   const key = JSON.stringify(body);
   const fresh = preview && preview.key === key;
   const clean = tidy(message);
@@ -103,7 +106,7 @@ export default function Messages() {
     try {
       const res = await smsAPI.send({ ...body, confirm_count: preview.recipients });
       setNote(`Sent to ${res.data.accepted} member${res.data.accepted === 1 ? '' : 's'}${res.data.failed ? `, ${res.data.failed} could not be sent` : ''}. ${res.data.remaining} SMS parts left this month.`);
-      setPreview(null); setMessage(''); loadHistory();
+      setPreview(null); setMessage(''); setNumbers(''); setAsked(false); loadHistory();
     } catch (err) {
       const d = err.response?.data;
       setError(d?.error || 'Could not send. Nothing was lost; try again.');
@@ -122,18 +125,31 @@ export default function Messages() {
           <select className="form-control" value={audience} onChange={e => setAudience(e.target.value)} aria-label="Who to send to">
             <option value="all">Everyone who agreed</option>
             <option value="selected">Chosen members only ({picked.length} chosen)</option>
+            <option value="numbers">Phone numbers I type</option>
           </select>
+          {audience === 'numbers' && (
+            <>
+              <textarea className="form-control" rows={2} value={numbers} onChange={e => setNumbers(e.target.value)}
+                        inputMode="tel" placeholder="Type one or more numbers, for example 0712 345 678, 0722 000 111" aria-label="Phone numbers" />
+              <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <input type="checkbox" checked={asked} onChange={e => setAsked(e.target.checked)} style={{ marginTop: 4 }} />
+                <span>The people with these numbers asked to receive this message. Anyone who replies STOP is never messaged again.</span>
+              </label>
+            </>
+          )}
           <textarea className="form-control" rows={4} value={message} onChange={e => setMessage(e.target.value)} placeholder="For example: Service starts at 9am this Sunday. God bless you." aria-label="Message" />
           <p className="cd-hint">{clean.length} characters · {parts(clean)} SMS part{parts(clean) === 1 ? '' : 's'} each (up to 3). Each part is counted against your monthly limit.
-            {' '}<button type="button" className="cd-call" onClick={() => setMessage(m => m + '{first_name}')}>Add {'{first_name}'}</button></p>
+            {audience !== 'numbers' && <>{' '}<button type="button" className="cd-call" onClick={() => setMessage(m => m + '{first_name}')}>Add {'{first_name}'}</button></>}</p>
           {error && <div className="cd-err" role="alert"><span>{error}</span></div>}
           {note && <div className="cd-item" role="status"><span>{note}</span></div>}
-          <button type="button" className="cd-act" onClick={doPreview} disabled={busy || !message.trim()}>Check before sending</button>
+          <button type="button" className="cd-act" onClick={doPreview} disabled={busy || !message.trim() || (audience === 'numbers' && !numbers.trim())}>Check before sending</button>
           {fresh && (
             <div className="cd-card" role="status" style={{ padding: '0.9rem 1rem' }}>
               <p><b>{preview.recipients}</b> member{preview.recipients === 1 ? '' : 's'} will get this · {preview.total_parts} SMS parts in all.</p>
               <p className="cd-hint">This month: {preview.used} used of {preview.limit}. After this: {preview.remaining_after} left.
-                {preview.skipped_no_phone > 0 && ` ${preview.skipped_no_phone} agreed but have no valid phone.`}</p>
+                {preview.skipped_no_phone > 0 && ` ${preview.skipped_no_phone} agreed but have no valid phone.`}
+                {preview.opted_out > 0 && ` ${preview.opted_out} replied STOP and will be skipped.`}
+                {preview.invalid_numbers && preview.invalid_numbers.length > 0 && ` Could not read: ${preview.invalid_numbers.join(', ')}.`}</p>
               <p className="cd-hint">Example: "{preview.sample}"</p>
               <button type="button" className="cd-act" onClick={doSend} disabled={busy || preview.remaining_after < 0}>{busy ? 'Sending…' : `Send to ${preview.recipients} now`}</button>
               {preview.remaining_after < 0 && <p className="cd-err" role="alert"><span>Over your monthly limit. Send fewer or upgrade.</span></p>}
