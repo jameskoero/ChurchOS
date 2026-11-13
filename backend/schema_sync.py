@@ -19,6 +19,8 @@ ADDITIONS = [
     ('members', 'consent_at', 'TIMESTAMP'),
     ('members', 'consent_version', 'VARCHAR(20)'),
     ('members', 'erased_at', 'TIMESTAMP'),
+    ('members', 'sms_ok', 'BOOLEAN DEFAULT FALSE'),
+    ('members', 'sms_ok_at', 'TIMESTAMP'),
     ('churches', 'paid_until', 'TIMESTAMP'),
     ('invoices', 'claim_method', 'VARCHAR(10)'),
     ('invoices', 'claim_reference', 'VARCHAR(40)'),

@@ -5,7 +5,7 @@ from tenancy import (current_church_id, scoped, owned_or_404, tquery,
                      redact_member)
 from datetime import datetime
 from ledger import audit
-from models import db, Member, Attendance
+from models import db, Member, Attendance, SmsMessage
 from sqlalchemy import or_, func
 
 members_bp = Blueprint('members', __name__)
@@ -259,6 +259,8 @@ def erase_member(member_id):
                   'next_of_kin_phone', 'cell_group', 'baptism_date', 'notes',
                   'consent_at', 'consent_version'):
         setattr(member, field, None)
+    member.sms_ok, member.sms_ok_at = False, None
+    SmsMessage.query.filter_by(member_id=member.id).update({'phone': 'erased'}, synchronize_session=False)
     member.membership_status = 'erased'
     member.erased_at = datetime.utcnow()
     # The audit row records that an erase happened, never what was erased.

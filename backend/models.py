@@ -238,6 +238,8 @@ class Member(db.Model):
     notes             = db.Column(db.Text)
     consent_at        = db.Column(db.DateTime)
     consent_version   = db.Column(db.String(20))
+    sms_ok            = db.Column(db.Boolean, default=False)
+    sms_ok_at         = db.Column(db.DateTime)
     erased_at         = db.Column(db.DateTime)
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at        = db.Column(db.DateTime, default=datetime.utcnow,
@@ -558,3 +560,29 @@ class PlatformSetting(db.Model):
     value      = db.Column(db.String(500))
     updated_by = db.Column(db.Integer)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class SmsMessage(db.Model):
+    """One text message to one member, and what happened to it."""
+    __tablename__ = 'sms_messages'
+    id          = db.Column(db.Integer, primary_key=True)
+    church_id   = db.Column(db.Integer, db.ForeignKey('churches.id'), index=True, nullable=False)
+    member_id   = db.Column(db.Integer, db.ForeignKey('members.id'), index=True)
+    batch_id    = db.Column(db.String(36), index=True)
+    phone       = db.Column(db.String(16))
+    body        = db.Column(db.String(480))
+    status      = db.Column(db.String(12), default='sent', index=True)
+    provider_id = db.Column(db.String(60), index=True)
+    detail      = db.Column(db.String(120))
+    segments    = db.Column(db.Integer, default=1)
+    cost        = db.Column(db.String(20))
+    created_by  = db.Column(db.Integer)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at  = db.Column(db.DateTime)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'member_id': self.member_id, 'phone': self.phone, 'body': self.body or '',
+            'status': self.status, 'detail': self.detail, 'segments': self.segments, 'cost': self.cost,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
