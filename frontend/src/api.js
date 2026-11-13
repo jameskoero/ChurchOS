@@ -205,3 +205,12 @@ export const checkinAPI = {
   roster: p => api.get('/api/checkin/roster', { params: p }),
   sync:   d => api.post('/api/checkin/sync', d, { timeout: 120000 }),
 };
+
+export const smsAPI = {
+  setup:    ()  => api.get('/api/sms/setup'),
+  audience: p   => api.get('/api/sms/audience', { params: p }),
+  consent:  d   => api.post('/api/sms/consent', d),
+  preview:  d   => api.post('/api/sms/preview', d),
+  send:     d   => api.post('/api/sms/send', d, { timeout: 120000 }),
+  history:  ()  => api.get('/api/sms/history'),
+};

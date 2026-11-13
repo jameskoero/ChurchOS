@@ -15,6 +15,7 @@ const ICONS = {
   key: 'M14.5 9.5a4 4 0 1 1-1.2 2.8L4 21v-3l2-2v-2h2l1.5-1.5',
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 21c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5',
   report: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7',
+  chat: 'M4 5h16v11H9l-5 4zM8 9h8M8 12h5',
   menu: 'M4 7h16M4 12h16M4 17h16',
   close: 'M6 6l12 12M18 6L6 18',
 };
@@ -33,6 +34,7 @@ const NAV = [
   { path: '/members', label: 'Members', icon: 'people' },
   { path: '/attendance', label: 'Attendance', icon: 'check' },
   { path: '/checkin', label: 'Check-in', icon: 'check', only: ['admin', 'pastor', 'secretary'] },
+  { path: '/messages', label: 'Messages', icon: 'chat', only: ['admin', 'pastor', 'secretary'] },
   { path: '/finance', label: 'Finance', icon: 'coins', requiredRole: 'treasurer' },
   { path: '/payments', label: 'Payments', icon: 'phone', only: ['admin', 'treasurer'] },
   { path: '/reports', label: 'Reports', icon: 'report', requiredRole: 'treasurer' },

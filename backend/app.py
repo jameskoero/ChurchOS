@@ -70,6 +70,7 @@ def create_app(config_name=None, overrides=None):
     from routes.reports    import reports_bp
     from routes.billing    import billing_bp, install_guard
     from routes.checkin    import checkin_bp
+    from routes.sms        import sms_bp
     app.register_blueprint(auth_bp,       url_prefix='/api/auth')
     app.register_blueprint(members_bp,    url_prefix='/api/members')
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
@@ -84,6 +85,7 @@ def create_app(config_name=None, overrides=None):
     app.register_blueprint(reports_bp,    url_prefix='/api/reports')
     app.register_blueprint(billing_bp,    url_prefix='/api/billing')
     app.register_blueprint(checkin_bp,    url_prefix='/api/checkin')
+    app.register_blueprint(sms_bp,        url_prefix='/api/sms')
     install_guard(app)
 
     # ── JWT: every token is checked against the blocklist and the user ──────
@@ -154,7 +156,7 @@ def create_app(config_name=None, overrides=None):
 
     @app.route('/api/health')
     def health():
-        return jsonify({'status': 'ok', 'app': 'ChurchOS', 'version': '2.8.0'}), 200
+        return jsonify({'status': 'ok', 'app': 'ChurchOS', 'version': '2.9.0'}), 200
 
     with app.app_context():
         _init_db()
