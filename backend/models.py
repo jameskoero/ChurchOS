@@ -599,6 +599,39 @@ class SmsOptOut(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class ChurchRequest(db.Model):
+    """A church asking for ChurchOS. It waits here until the platform owner approves or declines it."""
+    __tablename__ = 'church_requests'
+    id                = db.Column(db.Integer, primary_key=True)
+    church_name       = db.Column(db.String(120), nullable=False)
+    contact_name      = db.Column(db.String(80), nullable=False)
+    phone             = db.Column(db.String(16), nullable=False, index=True)
+    email             = db.Column(db.String(120))
+    county            = db.Column(db.String(80))
+    denomination_text = db.Column(db.String(160))
+    members_estimate  = db.Column(db.Integer)
+    note              = db.Column(db.String(500))
+    status            = db.Column(db.String(10), default='pending', index=True)
+    church_id         = db.Column(db.Integer)
+    decided_by        = db.Column(db.Integer)
+    decided_at        = db.Column(db.DateTime)
+    decision_note     = db.Column(db.String(300))
+    accepted_terms_at = db.Column(db.DateTime)
+    terms_version     = db.Column(db.String(10))
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'church_name': self.church_name, 'contact_name': self.contact_name,
+            'phone': self.phone, 'email': self.email, 'county': self.county,
+            'denomination': self.denomination_text, 'members_estimate': self.members_estimate,
+            'note': self.note, 'status': self.status, 'church_id': self.church_id,
+            'decision_note': self.decision_note,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'decided_at': self.decided_at.isoformat() if self.decided_at else None,
+        }
+
+
 class Denomination(db.Model):
     """A denomination or ministry, with the words its churches use."""
     __tablename__ = 'denominations'

@@ -1,0 +1,25 @@
+.pb { min-height: 100vh; background: #F2F4FA; color: #0C1445; font-family: var(--font-body); }
+.pb-top { background: #2339F5; color: #FFFFFF; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pb-brand { font-family: var(--font-display); font-weight: 900; font-size: 1.25rem; color: #FFFFFF; text-decoration: none; }
+.pb-back { color: #FFD84A; font-weight: 700; text-decoration: none; }
+.pb-wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 56px; }
+.pb-card { background: #FFFFFF; border: 1px solid #E1E5F2; border-radius: 22px; padding: 24px 20px; }
+.pb h1 { font-family: var(--font-display); font-weight: 900; font-size: 1.9rem; letter-spacing: -0.01em; margin: 0 0 6px; }
+.pb h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; margin: 22px 0 6px; }
+.pb p, .pb li { line-height: 1.6; font-size: 0.97rem; color: #26305C; }
+.pb ul { padding-left: 1.2rem; margin: 6px 0; }
+.pb a { color: #2339F5; }
+.pb-meta { color: #5A6487; font-size: 0.85rem; margin: 0 0 14px; }
+.pb-label { display: block; font-weight: 700; font-size: 0.85rem; color: #5A6487; margin: 14px 0 4px; }
+.pb-input { width: 100%; min-height: 50px; border-radius: 14px; border: 2px solid #E1E5F2; background: #F2F4FA; padding: 0 14px; font-size: 1rem; color: #0C1445; font-family: inherit; box-sizing: border-box; }
+textarea.pb-input { padding: 12px 14px; min-height: 90px; }
+.pb-input:focus { outline: none; border-color: #2339F5; background: #FFFFFF; }
+.pb-check { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 0.92rem; }
+.pb-check input { width: 22px; height: 22px; margin-top: 2px; flex: none; }
+.pb-go { margin-top: 18px; width: 100%; min-height: 52px; border-radius: 26px; border: 0; background: #FFD84A; color: #0C1445; font-weight: 800; font-size: 1.05rem; cursor: pointer; font-family: inherit; }
+.pb-go:disabled { opacity: 0.6; cursor: default; }
+.pb-err { background: #FCE4E2; color: #7A1A12; border-radius: 14px; padding: 12px 14px; font-weight: 600; margin-top: 12px; }
+.pb-ok { background: #E3F6E8; color: #0F4A22; border-radius: 14px; padding: 16px; font-weight: 600; line-height: 1.5; }
+.pb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.pb-links { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 16px; font-size: 0.85rem; }
+.pb *:focus-visible { outline: 3px solid #FFD84A; outline-offset: 2px; }
