@@ -150,6 +150,7 @@ class Church(db.Model):
     denomination_id   = db.Column(db.Integer)
     region_id         = db.Column(db.Integer, index=True)
     is_seat           = db.Column(db.Boolean, default=False)
+    region_sms_ok     = db.Column(db.Boolean, default=False)
     is_active         = db.Column(db.Boolean, default=True)
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at        = db.Column(db.DateTime, default=datetime.utcnow,

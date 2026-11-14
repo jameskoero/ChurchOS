@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { dashboardAPI, insightsAPI, governanceAPI } from '../api';
+import { dashboardAPI, insightsAPI } from '../api';
+import { useLabels } from '../contexts/LabelsContext';
 import { useAuth } from '../contexts/AuthContext';
 import './home.css';
 
@@ -64,13 +65,12 @@ export default function Dashboard() {
   const [words, setWords] = useState(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [church, setChurch] = useState('');
+  const { church } = useLabels();
 
   const load = useCallback(() => {
     setLoading(true);
     setFailed(false);
     dashboardAPI.getStats().then(r => setStats(r.data)).catch(() => setFailed(true)).finally(() => setLoading(false));
-    governanceAPI.church().then(r => setChurch(r.data.church || '')).catch(() => {});
     if (isPastoral) insightsAPI.care().then(r => setCare(r.data)).catch(() => setCare(null));
     if (seesMoney) insightsAPI.summary().then(r => setWords(r.data.lines || [])).catch(() => setWords(null));
   }, [isPastoral, seesMoney]);

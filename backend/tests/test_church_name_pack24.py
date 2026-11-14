@@ -9,7 +9,7 @@ SRC = os.path.join(os.path.dirname(BACKEND), 'frontend', 'src')
 def test_dashboard_and_menu_name_the_signed_in_church():
     for parts in (('pages', 'Dashboard.js'), ('components', 'Layout.js')):
         text = open(os.path.join(SRC, *parts), encoding='utf8').read()
-        assert 'churches?.[0]' not in text and 'governanceAPI.church()' in text, parts
+        assert 'churches?.[0]' not in text and ('governanceAPI.church()' in text or 'useLabels()' in text), parts
 
 
 def test_church_endpoint_names_the_signed_in_church(client):
