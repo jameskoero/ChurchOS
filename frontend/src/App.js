@@ -18,6 +18,8 @@ import CheckIn from './pages/CheckIn';
 import Messages from './pages/Messages';
 import Structure from './pages/Structure';
 import Region from './pages/Region';
+import Requests from './pages/Requests';
+import { Privacy, Terms, RequestChurch } from './pages/Public';
 function ProtectedRoute({children,requiredRole}) {
   const {user,loading} = useAuth();
   if (loading) return <div style={{display:'flex',alignItems:'center',
@@ -36,6 +38,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path='/privacy' element={<Privacy/>}/>
+        <Route path='/terms' element={<Terms/>}/>
+        <Route path='/request' element={<RequestChurch/>}/>
         <Route path='/login'
           element={user?<Navigate to='/' replace/>:<Login/>}/>
         <Route path='/'
@@ -63,6 +68,7 @@ export default function App() {
           <Route path='messages' element={<Messages/>}/>
           <Route path='structure' element={<Structure/>}/>
           <Route path='region' element={<Region/>}/>
+          <Route path='requests' element={<Requests/>}/>
           <Route path='profile' element={<Profile/>}/>
         </Route>
         <Route path='*' element={<Navigate to='/' replace/>}/>

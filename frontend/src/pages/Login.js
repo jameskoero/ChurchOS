@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { healthAPI } from '../api';
 import './login.css';
@@ -73,6 +73,8 @@ export default function Login() {
 
         <button type="submit" className="lg-go" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
         <p className="lg-foot">Authorised people only.</p>
+        <p className="lg-foot"><Link to="/request">Request ChurchOS for your church</Link></p>
+        <p className="lg-foot"><Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms of Use</Link></p>
       </form>
     </div>
   );

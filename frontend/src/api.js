@@ -231,3 +231,9 @@ export const governanceAPI = {
   removeChurch:        id       => api.post(`/api/governance/regions/mine/churches/${id}/remove`),
   regionMembers:       (id, p)  => api.get(`/api/governance/regions/mine/churches/${id}/members`, { params: p }),
 };
+
+export const publicAPI = {
+  request: d       => api.post('/api/public/request', d),
+  list:    p       => api.get('/api/public/requests', { params: p }),
+  decide:  (id, d) => api.put(`/api/public/requests/${id}`, d),
+};

@@ -1,0 +1,30 @@
+name: Uptime check
+
+# Every 30 minutes this checks that the server and the website answer.
+# If either is down for several tries in a row, this run FAILS and GitHub emails you.
+# GitHub may start scheduled runs a few minutes late. The email goes to the person who last edited this file's schedule.
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Server answers and says ok
+        run: |
+          ok=0
+          for try in 1 2 3 4; do
+            body=$(curl -s --max-time 60 https://churchos-yitr.onrender.com/api/health || true)
+            echo "try $try: $body"
+            if echo "$body" | grep -q '"status":"ok"'; then ok=1; break; fi
+            sleep 45
+          done
+          if [ "$ok" != "1" ]; then echo "::error::ChurchOS server is not answering"; exit 1; fi
+      - name: Website answers
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 https://churchos-app.vercel.app/ || echo 000)
+          echo "website status: $code"
+          if [ "$code" != "200" ]; then echo "::error::ChurchOS website returned $code"; exit 1; fi

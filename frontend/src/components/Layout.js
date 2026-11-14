@@ -45,6 +45,7 @@ const NAV = [
   { path: '/billing', label: 'Billing', icon: 'coins', requiredRole: 'admin' },
   { path: '/structure', label: 'Structure', icon: 'tree', only: ['admin', 'pastor'] },
   { path: '/region', label: 'Region', icon: 'tree', requiredRole: 'admin' },
+  { path: '/requests', label: 'Requests', icon: 'church', ownerOnly: true },
 ];
 const HIERARCHY = { admin: 5, pastor: 4, treasurer: 3, secretary: 2, viewer: 1 };
 
@@ -78,6 +79,7 @@ export default function Layout() {
   }, []);
 
   const allowed = item => {
+    if (item.ownerOnly) return !!user?.is_platform_owner;
     if (item.only) return item.only.includes(user?.role);
     return !item.requiredRole || (HIERARCHY[user?.role] || 0) >= (HIERARCHY[item.requiredRole] || 0);
   };
