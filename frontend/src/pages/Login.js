@@ -10,6 +10,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPwd, setShowPwd] = useState(false);
+  const [step, setStep] = useState(null);       // set when the server asks for an SMS code
+  const [code, setCode] = useState('');
   const [server, setServer] = useState('waking');   // waking | ready | down
 
   // The free server sleeps when idle; start waking it as soon as this page opens.
@@ -20,7 +22,7 @@ export default function Login() {
       .catch(() => live && setServer('down'));
     return () => { live = false; };
   }, []);
-  const { login } = useAuth();
+  const { login, verifyCode } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -28,7 +30,8 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await login(form.username, form.password);
+      const result = await login(form.username, form.password);
+      if (result && result.needs_code) { setStep(result); setCode(''); return; }
       navigate('/');
     } catch (err) {
       if (err.response?.data?.error) {
@@ -41,6 +44,43 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  const handleCode = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await verifyCode(step.challenge, code);
+      navigate('/');
+    } catch (err) {
+      const text = err.response?.data?.error;
+      setError(text || 'The server did not answer. Wait 30 seconds and try again.');
+      if (err.response?.status === 401 || err.response?.status === 429) { setStep(null); setCode(''); }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (step) {
+    return (
+      <div className="lg">
+        <div className="lg-hero">
+          <span className="lg-brand">ChurchOS</span>
+          <h1 className="lg-title">One more step.</h1>
+          <p className="lg-sub">We sent a 6-digit code to {step.phone_hint}.</p>
+        </div>
+        <form className="lg-card" onSubmit={handleCode}>
+          <h2 className="lg-h">Enter code</h2>
+          {error && <div className="lg-error" role="alert">{error}</div>}
+          <label className="lg-label" htmlFor="lg-code">6-digit code</label>
+          <input id="lg-code" className="lg-input" inputMode="numeric" autoComplete="one-time-code" autoFocus required maxLength={6}
+                 value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} />
+          <button type="submit" className="lg-go" disabled={loading || code.length !== 6}>{loading ? 'Checking…' : 'Sign in'}</button>
+          <p className="lg-foot">The code lasts 5 minutes. <button type="button" className="lg-show" style={{ position: 'static', transform: 'none' }} onClick={() => { setStep(null); setError(''); }}>Start again</button></p>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="lg">

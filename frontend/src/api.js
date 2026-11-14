@@ -84,6 +84,7 @@ export const authAPI = {
     ).catch(() => {});
   },
   me:             () => api.get('/api/auth/me'),
+  verifyCode:     d  => api.post('/api/auth/login/verify', d),
   changePassword: d  => api.post('/api/auth/change-password', d).then(res => {
     if (res.data && res.data.access_token) {
       localStorage.setItem('access_token', res.data.access_token);
@@ -234,6 +235,15 @@ export const governanceAPI = {
   report:              p        => api.get('/api/governance/regions/mine/report', { params: p }),
   smsPreview:          d        => api.post('/api/governance/regions/mine/sms/preview', d),
   smsSend:             d        => api.post('/api/governance/regions/mine/sms/send', d, { timeout: 120000 }),
+};
+
+export const smsLoginAPI = {
+  status:   ()  => api.get('/api/auth/sms-login/status'),
+  platform: d   => api.put('/api/auth/sms-login/platform', d),
+  start:    d   => api.post('/api/auth/sms-login/start', d),
+  confirm:  d   => api.post('/api/auth/sms-login/confirm', d),
+  disable:  d   => api.post('/api/auth/sms-login/disable', d),
+  reset:    id  => api.post(`/api/auth/sms-login/reset/${id}`),
 };
 
 export const publicAPI = {

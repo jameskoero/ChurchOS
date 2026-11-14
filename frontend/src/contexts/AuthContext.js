@@ -21,15 +21,28 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = useCallback(async (username, password) => {
-    const res = await authAPI.login({ username, password });
-    const { access_token, refresh_token, user: userData } = res.data;
+  const finish = useCallback(data => {
+    const { access_token, refresh_token, user: userData } = data;
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('refresh_token', refresh_token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     return userData;
   }, []);
+
+  // When SMS sign-in is on for this person, the server asks for a code instead of signing in.
+  const login = useCallback(async (username, password) => {
+    const res = await authAPI.login({ username, password });
+    if (res.data.needs_code) {
+      return { needs_code: true, challenge: res.data.challenge, phone_hint: res.data.phone_hint };
+    }
+    return finish(res.data);
+  }, [finish]);
+
+  const verifyCode = useCallback(async (challenge, code) => {
+    const res = await authAPI.verifyCode({ challenge, code });
+    return finish(res.data);
+  }, [finish]);
 
   const logout = useCallback(() => {
     authAPI.logout();
@@ -53,7 +66,7 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, can }}>
+    <AuthContext.Provider value={{ user, loading, login, verifyCode, logout, can }}>
       {children}
     </AuthContext.Provider>
   );

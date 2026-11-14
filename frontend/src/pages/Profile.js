@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../api';
+import SmsLogin from './SmsLogin';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -115,6 +116,8 @@ export default function Profile() {
           </button>
         </form>
       </div>
+
+      <SmsLogin />
 
       {/* System info */}
       <div className="card" style={{ marginTop: '1.25rem', background: 'var(--navy)', color: 'var(--white)' }}>
