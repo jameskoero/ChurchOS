@@ -15,7 +15,7 @@ SANDBOX = 'https://sandbox.safaricom.co.ke'
 LIVE = 'https://api.safaricom.co.ke'
 _REQUIRED = ('MPESA_CONSUMER_KEY', 'MPESA_CONSUMER_SECRET', 'MPESA_SHORTCODE',
              'MPESA_PASSKEY', 'MPESA_CALLBACK_URL', 'MPESA_CALLBACK_SECRET')
-_token = {'value': None, 'expires': 0.0}
+_tokens = {}      # access tokens kept per Consumer Key, so one church never receives another's token
 
 
 class MpesaError(Exception):
@@ -55,26 +55,26 @@ def _call(url, payload=None, headers=None):
 
 
 def access_token(cfg):
-    if _token['value'] and time.time() < _token['expires']:
-        return _token['value']
+    cached = _tokens.get(cfg['MPESA_CONSUMER_KEY'])
+    if cached and time.time() < cached[1]:
+        return cached[0]
     pair = ('%s:%s' % (cfg['MPESA_CONSUMER_KEY'], cfg['MPESA_CONSUMER_SECRET'])).encode()
     body = _call(cfg['base'] + '/oauth/v1/generate?grant_type=client_credentials',
                  headers={'Authorization': 'Basic ' + base64.b64encode(pair).decode()})
     token = body.get('access_token')
     if not token:
         raise MpesaError('Safaricom sent no access token')
-    _token['value'] = token
-    _token['expires'] = time.time() + max(60, int(body.get('expires_in', 3599)) - 60)
+    _tokens[cfg['MPESA_CONSUMER_KEY']] = (token, time.time() + max(60, int(body.get('expires_in', 3599)) - 60))
     return token
 
 
-def stk_push(phone, amount, account_ref, description):
+def stk_push(phone, amount, account_ref, description, cfg=None):
     """Ask Safaricom to show the payment prompt on this phone.
 
-    phone is 2547XXXXXXXX, amount a whole number of shillings.
-    Returns {'merchant_request_id': ..., 'checkout_request_id': ...}.
+    phone is 2547XXXXXXXX, amount a whole number of shillings. cfg is a church's own settings; without it the
+    platform settings are used. Returns {'merchant_request_id': ..., 'checkout_request_id': ...}.
     """
-    cfg = settings()
+    cfg = cfg or settings()
     stamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
     password = base64.b64encode(
         (cfg['MPESA_SHORTCODE'] + cfg['MPESA_PASSKEY'] + stamp).encode()).decode()
@@ -101,13 +101,13 @@ def stk_push(phone, amount, account_ref, description):
             'checkout_request_id': body['CheckoutRequestID']}
 
 
-def stk_query(checkout_request_id):
+def stk_query(checkout_request_id, cfg=None):
     """Ask Safaricom for the result of one prompt (used when no callback arrived).
 
     Returns (result_code, result_desc). Raises MpesaError while Safaricom is
     still processing it or cannot be reached.
     """
-    cfg = settings()
+    cfg = cfg or settings()
     stamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
     password = base64.b64encode(
         (cfg['MPESA_SHORTCODE'] + cfg['MPESA_PASSKEY'] + stamp).encode()).decode()
@@ -145,6 +145,6 @@ def setup_status():
 def test_credentials():
     """Ask Safaricom for a fresh access token. Raises MpesaError if the keys are refused."""
     cfg = settings()
-    _token['value'] = None
+    _tokens.pop(cfg['MPESA_CONSUMER_KEY'], None)
     access_token(cfg)
     return True

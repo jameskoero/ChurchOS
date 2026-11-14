@@ -75,6 +75,7 @@ def create_app(config_name=None, overrides=None):
     from routes.public     import public_bp
     from routes.regionops  import regionops_bp
     from routes.smslogin   import smslogin_bp
+    from routes.ownmpesa   import ownmpesa_bp
     app.register_blueprint(auth_bp,       url_prefix='/api/auth')
     app.register_blueprint(members_bp,    url_prefix='/api/members')
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
@@ -84,6 +85,7 @@ def create_app(config_name=None, overrides=None):
     app.register_blueprint(dashboard_bp,  url_prefix='/api/dashboard')
     app.register_blueprint(churches_bp,   url_prefix='/api/churches')
     app.register_blueprint(payments_bp,   url_prefix='/api/payments')
+    app.register_blueprint(ownmpesa_bp,   url_prefix='/api/payments')
     app.register_blueprint(insights_bp,   url_prefix='/api/insights')
     app.register_blueprint(accounts_bp,   url_prefix='/api/accounts')
     app.register_blueprint(reports_bp,    url_prefix='/api/reports')
@@ -164,7 +166,7 @@ def create_app(config_name=None, overrides=None):
 
     @app.route('/api/health')
     def health():
-        return jsonify({'status': 'ok', 'app': 'ChurchOS', 'version': '3.3.0'}), 200
+        return jsonify({'status': 'ok', 'app': 'ChurchOS', 'version': '3.4.0'}), 200
 
     with app.app_context():
         _init_db()

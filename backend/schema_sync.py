@@ -30,6 +30,7 @@ ADDITIONS = [
     ('churches', 'is_seat', 'BOOLEAN DEFAULT FALSE'),
     ('churches', 'paid_until', 'TIMESTAMP'),
     ('churches', 'region_sms_ok', 'BOOLEAN DEFAULT FALSE'),
+    ('payment_requests', 'via', 'VARCHAR(8)'),
     ('invoices', 'claim_method', 'VARCHAR(10)'),
     ('invoices', 'claim_reference', 'VARCHAR(40)'),
     ('invoices', 'claimed_at', 'TIMESTAMP'),
