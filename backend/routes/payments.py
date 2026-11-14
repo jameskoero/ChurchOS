@@ -4,15 +4,15 @@ import os
 import re
 from datetime import date, datetime, timedelta
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 
 from extensions import limiter, client_ip
 from ledger import audit, live_money, money, new_reference
-from models import (db, Church, Finance, Member, PaymentEvent, PaymentRequest,
+from models import (db, Church, ChurchMpesa, Finance, Member, PaymentEvent, PaymentRequest,
                     TRANSACTION_TYPES)
-from services import mpesa
+from services import churchmpesa, mpesa, vault
 from tenancy import (current_church_id, scoped, owned_or_404, page_size,
                      roles_required)
 
@@ -54,12 +54,18 @@ def _ack():
 
 
 def _guard(secret):
-    """Callbacks are unsigned, so the URL carries a long secret. None means allowed."""
+    """Callbacks are unsigned, so the URL carries a long secret. None means allowed.
+    The platform secret is the platform's own; a church's own secret ties the call to that one church
+    (g.mpesa_church_id), and the handlers below refuse anything that belongs to a different church."""
+    g.mpesa_church_id = None
     expected = os.environ.get('MPESA_CALLBACK_SECRET', '')
-    if len(expected) < 16:
-        return jsonify({'error': 'Payments are not configured', 'code': 'MPESA_NOT_CONFIGURED'}), 503
-    if not hmac.compare_digest(str(secret), expected):
-        return jsonify({'error': 'Not found', 'code': 'NOT_FOUND'}), 404
+    if not (len(expected) >= 16 and hmac.compare_digest(str(secret), expected)):
+        own = ChurchMpesa.query.filter_by(callback_token=str(secret)[:80]).first()
+        if own is None:
+            if len(expected) < 16:
+                return jsonify({'error': 'Payments are not configured', 'code': 'MPESA_NOT_CONFIGURED'}), 503
+            return jsonify({'error': 'Not found', 'code': 'NOT_FOUND'}), 404
+        g.mpesa_church_id = own.church_id
     allowed = [ip.strip() for ip in os.environ.get('MPESA_ALLOWED_IPS', '').split(',') if ip.strip()]
     if allowed and client_ip() not in allowed:
         return jsonify({'error': 'Not allowed', 'code': 'FORBIDDEN'}), 403
@@ -120,9 +126,25 @@ def start_stk():
         if member is None:
             return jsonify({'error': 'Member not found'}), 404
 
+    own = ChurchMpesa.query.filter_by(church_id=current_church_id(), enabled=True).first()
+    via, cfg = None, None
+    if own is not None:
+        # A church with its own Safaricom setup NEVER falls back to the platform's keys.
+        try:
+            cfg = churchmpesa.cfg_for(own)
+        except (vault.VaultError, mpesa.NotConfigured) as err:
+            log.warning('own M-Pesa unusable for church %s: %s', current_church_id(), err)
+            return jsonify({'error': "Your church's own M-Pesa setup cannot be used right now. Ask your admin to open Payments and save the keys again.",
+                            'code': 'MPESA_OWN_BROKEN'}), 503
+        via = 'own'
+    elif os.environ.get('MPESA_ENV', 'sandbox').strip().lower() in ('live', 'production'):
+        # The platform's live keys belong to the platform owner: church money must never go there.
+        return jsonify({'error': 'This church must connect its own Paybill or Till under Payments first.',
+                        'code': 'MPESA_OWN_REQUIRED'}), 409
+
     try:
-        sent = mpesa.stk_push(phone, amount, member.member_id if member else 'CHURCH',
-                              'Church giving')
+        args = (phone, amount, member.member_id if member else 'CHURCH', 'Church giving')
+        sent = mpesa.stk_push(*args, cfg=cfg) if cfg else mpesa.stk_push(*args)
     except mpesa.NotConfigured:
         return jsonify({'error': 'M-Pesa is not set up yet', 'code': 'MPESA_NOT_CONFIGURED',
                         'missing': mpesa.setup_status()['missing']}), 503
@@ -136,7 +158,7 @@ def start_stk():
         church_id=current_church_id(), member_id=member.id if member else None,
         phone_masked=_mask(phone), amount=amount, transaction_type=tx_type,
         status='pending', checkout_request_id=sent['checkout_request_id'],
-        merchant_request_id=sent.get('merchant_request_id'), requested_by=user_id)
+        merchant_request_id=sent.get('merchant_request_id'), requested_by=user_id, via=via)
     db.session.add(pr)
     db.session.flush()
     audit('payment.request', 'payment', pr.id, after={'amount': str(amount), 'phone': pr.phone_masked})
@@ -203,8 +225,14 @@ def _resolve_by_query(pr):
         return
     _last_query[pr.id] = now
     try:
-        code, desc = mpesa.stk_query(pr.checkout_request_id)
-    except mpesa.MpesaError:
+        if pr.via == 'own':
+            row = ChurchMpesa.query.filter_by(church_id=pr.church_id).first()
+            if row is None:
+                return
+            code, desc = mpesa.stk_query(pr.checkout_request_id, cfg=churchmpesa.cfg_for(row))
+        else:
+            code, desc = mpesa.stk_query(pr.checkout_request_id)
+    except (mpesa.MpesaError, vault.VaultError):
         return                      # still processing, or Safaricom unreachable: ask again later
     pr.result_code = code[:10]
     pr.result_desc = desc[:255]
@@ -237,6 +265,9 @@ def stk_callback(secret):
     if pr is None:
         log.warning('callback for an unknown checkout id')
         return _ack()
+    if (pr.church_id if pr.via == 'own' else None) != g.mpesa_church_id:
+        log.warning('callback used the wrong secret for this payment')
+        return _ack()                       # an own-church prompt only answers to that church's secret
     if pr.status == 'paid' and not pr.mpesa_receipt and str(cb.get('ResultCode')) == '0':
         # Paid via the status check first; the late callback supplies the receipt.
         meta = (cb.get('CallbackMetadata') or {}).get('Item') or []
@@ -324,8 +355,15 @@ def c2b_confirmation(secret):
         return _ack()
     if PaymentEvent.query.filter_by(trans_id=trans_id).first() is not None:
         return _ack()                       # Safaricom resends; keep it to one record
-    churches = Church.query.filter(Church.paybill == shortcode).all()
-    if len(churches) != 1:
+    if g.mpesa_church_id is not None:
+        own = ChurchMpesa.query.filter_by(church_id=g.mpesa_church_id).first()
+        if own is None or own.shortcode != shortcode:
+            log.warning('paybill notice sent to a church address for a different shortcode')
+            return _ack()
+        churches = [db.session.get(Church, g.mpesa_church_id)]
+    else:
+        churches = Church.query.filter(Church.paybill == shortcode).all()
+    if len(churches) != 1 or churches[0] is None:
         log.warning('paybill payment for an unknown or shared shortcode')
         return _ack()
     church = churches[0]

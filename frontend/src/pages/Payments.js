@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { accountsAPI, membersAPI, paymentsAPI } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import OwnMpesa from './OwnMpesa';
 import './dashboard.css';
 
 const TYPES = [['tithe', 'Tithe'], ['offering', 'Offering'], ['donation', 'Donation'], ['project_fund', 'Project fund']];
@@ -388,6 +389,7 @@ export default function Payments() {
         </div>
       </div>
       <SetupCheck />
+      <OwnMpesa />
       <Accounts />
       <ImportStatement />
       <div className="cd-grid even">

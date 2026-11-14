@@ -464,6 +464,7 @@ class PaymentRequest(db.Model):
     result_desc         = db.Column(db.String(255))
     finance_id          = db.Column(db.Integer)
     requested_by        = db.Column(db.Integer)
+    via                 = db.Column(db.String(8))      # 'own' when sent with the church's own Safaricom keys
     created_at          = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     completed_at        = db.Column(db.DateTime)
 
@@ -635,6 +636,25 @@ class ChurchRequest(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'decided_at': self.decided_at.isoformat() if self.decided_at else None,
         }
+
+
+class ChurchMpesa(db.Model):
+    """A church's own Safaricom Paybill or Till and its Daraja keys. The keys are stored encrypted."""
+    __tablename__ = 'church_mpesa'
+    id                  = db.Column(db.Integer, primary_key=True)
+    church_id           = db.Column(db.Integer, db.ForeignKey('churches.id'), unique=True, nullable=False)
+    shortcode           = db.Column(db.String(10), index=True, nullable=False)
+    env                 = db.Column(db.String(10), default='sandbox')
+    consumer_key_enc    = db.Column(db.Text)
+    consumer_secret_enc = db.Column(db.Text)
+    passkey_enc         = db.Column(db.Text)
+    callback_token      = db.Column(db.String(64), unique=True, index=True, nullable=False)
+    enabled             = db.Column(db.Boolean, default=False)
+    verified_at         = db.Column(db.DateTime)
+    c2b_registered_at   = db.Column(db.DateTime)
+    updated_by          = db.Column(db.Integer)
+    created_at          = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at          = db.Column(db.DateTime)
 
 
 class LoginChallenge(db.Model):

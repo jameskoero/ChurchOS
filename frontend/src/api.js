@@ -164,6 +164,14 @@ export const paymentsAPI = {
   match:      (id, d) => api.post(`/api/payments/inbox/${id}/match`, d),
   ignore:     (id, d) => api.post(`/api/payments/inbox/${id}/ignore`, d),
 };
+export const ownMpesaAPI = {
+  status:      ()  => api.get('/api/payments/own'),
+  save:        d   => api.put('/api/payments/own', d),
+  test:        ()  => api.post('/api/payments/own/test'),
+  registerC2b: ()  => api.post('/api/payments/own/register-c2b'),
+  enable:      d   => api.post('/api/payments/own/enable', d),
+  remove:      ()  => api.delete('/api/payments/own'),
+};
 export const insightsAPI = {
   care:     p => api.get('/api/insights/care', { params: p }),
   giving:   () => api.get('/api/insights/giving'),
