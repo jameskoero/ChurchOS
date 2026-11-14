@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { billingAPI, governanceAPI } from '../api';
+import { billingAPI } from '../api';
+import { useLabels, plural } from '../contexts/LabelsContext';
 import './layout.css';
 
 const ICONS = {
@@ -54,15 +55,9 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [churchName, setChurchName] = useState('');
+  const { labels, church: churchName } = useLabels();
   const [billing, setBilling] = useState(null);
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
-
-  useEffect(() => {
-    governanceAPI.church()
-      .then(r => setChurchName(r.data.church || ''))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
@@ -78,6 +73,11 @@ export default function Layout() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
+  const navLabel = item => {
+    if (item.path === '/region') return labels.region_label;
+    if (item.path === '/churches' && !user?.is_platform_owner) return plural(labels.unit_label);
+    return item.label;
+  };
   const allowed = item => {
     if (item.ownerOnly) return !!user?.is_platform_owner;
     if (item.only) return item.only.includes(user?.role);
@@ -96,15 +96,15 @@ export default function Layout() {
           <span className="ly-name">ChurchOS</span>
         </div>
         <div className="ly-church">
-          <span className="ly-eyebrow">Church</span>
-          <span className="ly-church-name">{churchName || 'Your church'}</span>
+          <span className="ly-eyebrow">{labels.unit_label}</span>
+          <span className="ly-church-name">{churchName || `Your ${labels.unit_label.toLowerCase()}`}</span>
         </div>
         <nav className="ly-nav">
           {NAV.filter(allowed).map(item => (
             <NavLink key={item.path} to={item.path} end={item.exact}
                      className={({ isActive }) => `ly-link${isActive ? ' active' : ''}`}>
               <Icon name={item.icon} />
-              <span>{item.label}</span>
+              <span>{navLabel(item)}</span>
             </NavLink>
           ))}
         </nav>

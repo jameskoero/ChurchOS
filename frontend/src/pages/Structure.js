@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { governanceAPI } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import { useLabels } from '../contexts/LabelsContext';
 import './dashboard.css';
 
 const STATUS = { verified: 'verified', listed: 'listed', pending: 'waiting for approval' };
@@ -95,6 +96,9 @@ export default function Structure() {
   const [error, setError] = useState('');
   const load = useCallback(() => { governanceAPI.church().then(r => setInfo(r.data)).catch(() => setError('Could not load.')); }, []);
   useEffect(() => { load(); }, [load]);
+  const { reload: reloadLabels } = useLabels();
+  const denomId = info?.denomination?.id;
+  useEffect(() => { if (denomId) reloadLabels(); }, [denomId, reloadLabels]);
   const isAdmin = user?.role === 'admin';
   const L = info?.labels || {};
 
@@ -106,6 +110,11 @@ export default function Structure() {
   const answer = async (id, action) => {
     setError('');
     try { await governanceAPI.answer(id, action); load(); }
+    catch (err) { setError(err.response?.data?.error || 'Could not save.'); }
+  };
+  const toggleSms = async e => {
+    setError('');
+    try { await governanceAPI.regionalSms({ allow: e.target.checked }); load(); }
     catch (err) { setError(err.response?.data?.error || 'Could not save.'); }
   };
   const leave = async () => {
@@ -140,6 +149,12 @@ export default function Structure() {
             <p><b>{info.region.name}</b> · {L.region_leader_title}: {info.region.leader || 'not set'}{info.is_seat && <> · <span className="cd-badge">{L.seat_label}</span></>}</p>
             <p className="cd-hint">The {L.region_leader_title} can see this {(L.unit_label || 'church').toLowerCase()}'s totals and member list, read-only. Each look is recorded in your activity log.</p>
             {info.leads_region && <Link className="cd-act" to="/region">Open the {L.region_label} overview</Link>}
+            {isAdmin && !info.is_seat && (
+              <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.8rem' }}>
+                <input type="checkbox" checked={!!info.regional_sms} onChange={toggleSms} style={{ width: 22, height: 22, flex: 'none' }} />
+                <span className="cd-hint">Allow the {L.region_leader_title} to send SMS to our members who agreed to receive messages. Off by default. Members who replied STOP are never messaged. Each send is recorded in your activity log.</span>
+              </label>
+            )}
             {isAdmin && !info.is_seat && <button type="button" className="cd-call" style={{ marginTop: '0.6rem' }} onClick={leave}>Leave this {L.region_label.toLowerCase()}</button>}
           </>
         ) : (

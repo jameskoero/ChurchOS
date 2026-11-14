@@ -230,6 +230,10 @@ export const governanceAPI = {
   answer:              (id, a)  => api.post(`/api/governance/invites/${id}/${a}`),
   removeChurch:        id       => api.post(`/api/governance/regions/mine/churches/${id}/remove`),
   regionMembers:       (id, p)  => api.get(`/api/governance/regions/mine/churches/${id}/members`, { params: p }),
+  regionalSms:         d        => api.put('/api/governance/church/regional-sms', d),
+  report:              p        => api.get('/api/governance/regions/mine/report', { params: p }),
+  smsPreview:          d        => api.post('/api/governance/regions/mine/sms/preview', d),
+  smsSend:             d        => api.post('/api/governance/regions/mine/sms/send', d, { timeout: 120000 }),
 };
 
 export const publicAPI = {

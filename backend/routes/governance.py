@@ -150,6 +150,7 @@ def my_church():
     invites = RegionInvite.query.filter_by(church_id=church.id, status='pending').all()
     return jsonify({
         'church': church.name, 'church_code': church_code(church.id), 'is_seat': bool(church.is_seat),
+        'regional_sms': bool(church.region_sms_ok),
         'denomination': denomination.to_dict() if denomination else None,
         'labels': denomination.labels() if denomination else dict(GENERIC),
         'region': _region_view(region) if region else None,
@@ -289,7 +290,8 @@ def my_region():
                      'new_members_30d': active.filter(Member.date_joined >= since).count(),
                      'attendance_30d': attended.count(),
                      'people_attending_30d': attended.with_entities(Attendance.member_id).distinct().count(),
-                     'giving_30d': round(sum(float(f.amount) for f in giving), 2)})
+                     'giving_30d': round(sum(float(f.amount) for f in giving), 2),
+                     'regional_sms': bool(c.region_sms_ok)})
     invites = RegionInvite.query.filter_by(region_id=region.id).order_by(RegionInvite.id.desc()).limit(50).all()
     return jsonify({
         'region': _region_view(region), 'churches': rows,
