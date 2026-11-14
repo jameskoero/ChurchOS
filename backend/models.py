@@ -191,6 +191,10 @@ class User(db.Model):
     locked_until  = db.Column(db.DateTime)
     token_version = db.Column(db.Integer, default=0)
     is_platform_owner = db.Column(db.Boolean, default=False)
+    phone         = db.Column(db.String(16))
+    sms_login     = db.Column(db.Boolean, default=False)
+    pending_phone = db.Column(db.String(16))
+    pending_phone_at = db.Column(db.DateTime)
 
     def set_password(self, p):
         self.password_hash = bcrypt.generate_password_hash(p).decode('utf-8')
@@ -631,6 +635,21 @@ class ChurchRequest(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'decided_at': self.decided_at.isoformat() if self.decided_at else None,
         }
+
+
+class LoginChallenge(db.Model):
+    """One SMS code waiting to be typed. Only hashes are stored, never the code itself."""
+    __tablename__ = 'login_challenges'
+    id         = db.Column(db.Integer, primary_key=True)
+    token_hash = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), index=True, nullable=False)
+    purpose    = db.Column(db.String(10), nullable=False)
+    phone      = db.Column(db.String(16))
+    code_hash  = db.Column(db.String(64), nullable=False)
+    attempts   = db.Column(db.Integer, default=0)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    ip         = db.Column(db.String(45))
 
 
 class Denomination(db.Model):

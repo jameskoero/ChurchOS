@@ -130,6 +130,11 @@ def login():
     if not user.is_active:
         return jsonify({'error': 'Account is deactivated. Contact administrator.'}), 403
 
+    from routes.smslogin import second_step
+    needs_code = second_step(user, now)     # only when SMS sign-in is on for the platform and this person
+    if needs_code is not None:
+        return needs_code
+
     user.failed_logins = 0
     user.locked_until = None
     user.last_login = now

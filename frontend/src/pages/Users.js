@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { usersAPI } from '../api';
+import { usersAPI, smsLoginAPI } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
 const ROLES = ['admin', 'pastor', 'secretary', 'treasurer', 'viewer'];
@@ -60,6 +60,11 @@ export default function Users() {
       setShowModal(false); fetchUsers();
     } catch (err) { setError(err.response?.data?.error || 'Save failed'); }
     finally { setSaving(false); }
+  };
+
+  const resetSms = async (u) => {
+    if (!window.confirm(`Clear SMS sign-in for ${u.username}? They will sign in with their password alone until they set it up again.`)) return;
+    try { await smsLoginAPI.reset(u.id); alert('SMS sign-in cleared.'); } catch (err) { alert(err.response?.data?.error || 'Could not clear.'); }
   };
 
   const handleDelete = async (id) => {
@@ -141,6 +146,7 @@ export default function Users() {
                     <td>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         <button className="btn btn-outline btn-sm" onClick={() => openEdit(u)}>Edit</button>
+                        <button className="btn btn-outline btn-sm" onClick={() => resetSms(u)}>Reset SMS</button>
                         {u.id !== currentUser?.id && (
                           <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(u)}>Del</button>
                         )}
